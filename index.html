@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gana con MASECA</title>
+  <!-- estilos (me los pides después) -->
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="shortcut icon" type="image/png" href="/images/favicon.png" />
+</head>
+<body>
+  <main class="wrap">
+    <!-- Encabezado (logo alineado con la ruleta + título centrado) -->
+    <header class="header">
+      <img
+        src="https://www.maseca.com.mx/media/1911/logo_maseca-2x.png"
+        alt="Logo MASECA"
+        class="logo-maseca"
+      />
+      <h1>Gana con MASECA</h1>
+    </header>
+
+    <!-- Ruleta -->
+    <section class="wheel-area">
+      <div class="wheel-box">
+        <canvas id="wheel" aria-label="ruleta" role="img"></canvas>
+        <div class="center-text" id="centerText">¡SUERTE!</div>
+        <div class="pointer" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <!-- Controles -->
+    <section class="controls">
+      <div class="row">
+        <button id="btnSpin">Girar</button>
+        <div id="pillSpins" class="pill">Giros: 0 / ∞</div>
+      </div>
+      <p id="status" class="status">Listo para girar.</p>
+      <!-- <p id="pinDisplay" class="status"></p> -->
+    </section>
+  </main>
+
+  <!-- Overlay de resultado -->
+  <div id="resultOverlay" class="overlay" aria-modal="true" role="dialog">
+    <div class="dialog">
+      <div id="resultBadge" class="badge">RESULTADO</div>
+      <div id="resultSub" class="sub"></div>
+      <button id="btnOk">Aceptar</button>
+    </div>
+  </div>
+
+  <!-- ⚙️ Botón flotante de configuración -->
+  <button id="btnConfig" class="fab-config" aria-label="Configuración">⚙️</button>
+
+  <!-- Modal PIN de administrador -->
+  <div id="pinOverlay" class="overlay overlay-pin" aria-modal="true" role="dialog" style="display:none">
+    <div class="pin-dialog">
+      <h3>Acceso administrador</h3>
+      <p class="pin-help">Ingresa el PIN para abrir la configuración.</p>
+      <input id="pinInput" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="8" />
+      <p id="pinMsg" class="pin-msg" aria-live="polite"></p>
+      <div class="pin-actions">
+        <button id="btnPinCancel" class="btn-secondary" type="button">Cancelar</button>
+        <button id="btnPinOk" class="btn-primary" type="button">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel de configuración (administrador) -->
+  <div id="configPanel" class="config-panel" aria-hidden="true">
+    <div class="config-header">
+      <h2>Configuración de la Ruleta</h2>
+      <button id="btnCloseConfig" class="icon-btn" aria-label="Cerrar">✕</button>
+    </div>
+
+    <!-- Tabs -->
+    <nav class="cfg-tabs" role="tablist" aria-label="Secciones de configuración">
+      <button id="tabSettings" class="cfg-tab is-active" role="tab" aria-selected="true" aria-controls="paneSettings">Ajustes</button>
+      <button id="tabLog" class="cfg-tab" role="tab" aria-selected="false" aria-controls="paneLog">
+        Registro (<span id="tabLogCount">0</span>)
+      </button>
+    </nav>
+
+    <!-- PANE: Ajustes -->
+    <section id="paneSettings" class="cfg-pane show" role="tabpanel" aria-labelledby="tabSettings">
+      <form id="configForm" class="config-form" autocomplete="off">
+        <div class="cfg-grid">
+          <div class="cfg-row">
+            <label for="cfgWinnersTotal">Número de ganadores (stock)</label>
+            <input type="number" id="cfgWinnersTotal" min="0" step="1" />
+          </div>
+          <div class="cfg-row">
+            <label for="cfgWinProbX">Probabilidad de ganar (1 en X)</label>
+            <input type="number" id="cfgWinProbX" min="1" step="1" />
+          </div>
+        </div>
+
+        <div class="cfg-block">
+          <h3 class="cfg-subtitle">Valores calculados</h3>
+          <ul class="calc-list">
+            <li>Total de participaciones: <strong id="statTotal">0</strong></li>
+            <li>Participaciones actuales (hoy): <strong id="statCurrent">0</strong></li>
+            <li>Ganadores restantes: <strong id="statRemaining">0</strong></li>
+          </ul>
+        </div>
+
+        <div class="cfg-actions">
+          <button type="submit" id="btnCfgSave" class="primary">Guardar ajustes</button>
+          <button type="button" id="btnCfgResetAll">Reiniciar todo</button>
+        </div>
+
+        <div class="cfg-sep"></div>
+
+        <!-- Bloque: administrador (cambio de PIN) -->
+        <h3 class="cfg-subtitle">Administrador</h3>
+        <form id="pinForm" class="config-form">
+          <div class="cfg-grid">
+            <div class="cfg-row">
+              <label for="pinOld">PIN actual</label>
+              <input type="password" id="pinOld" inputmode="numeric" maxlength="8" placeholder="••••" />
+            </div>
+            <div class="cfg-row">
+              <label for="pinNew">Nuevo PIN (4–8 dígitos)</label>
+              <input type="password" id="pinNew" inputmode="numeric" maxlength="8" placeholder="••••" />
+            </div>
+            <div class="cfg-row">
+              <label for="pinNew2">Confirmar nuevo PIN</label>
+              <input type="password" id="pinNew2" inputmode="numeric" maxlength="8" placeholder="••••" />
+            </div>
+          </div>
+
+          <p id="pinChangeMsg" class="pin-msg" aria-live="polite"></p>
+
+          <div class="cfg-actions">
+            <button type="submit" class="primary">Cambiar PIN</button>
+            <button type="button" id="btnPinResetDefault">Restablecer a 2468</button>
+          </div>
+        </form>
+      </form>
+
+      <div class="cfg-footer">
+        <button id="btnCfgCloseBottom" type="button">Cerrar</button>
+      </div>
+    </section>
+
+    <!-- PANE: Registro -->
+    <section id="paneLog" class="cfg-pane" role="tabpanel" aria-labelledby="tabLog" hidden>
+      <div class="cfg-pane-header">
+        <h3 class="cfg-subtitle">Historial de participaciones</h3>
+        <div class="cfg-pane-actions">
+          <button id="btnLogRefresh" type="button">Actualizar</button>
+          <button id="btnLogExport" type="button" class="primary">Exportar CSV</button>
+        </div>
+      </div>
+
+      <ol id="logList" class="log-list" start="1">
+        <!-- items del log (JS) -->
+      </ol>
+
+      <div class="cfg-footer">
+        <button id="btnCfgCloseBottom2" type="button">Cerrar</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- scripts (me pides el JS después) -->
+  <script src="script.js"></script>
+</body>
+</html>
