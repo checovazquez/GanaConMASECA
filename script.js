@@ -87,9 +87,65 @@ function ding(){
   o.connect(g); g.connect(audioCtx.destination);
   o.start(); o.stop(audioCtx.currentTime+0.32);
 }
+function playWinJingle(){
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
+
+    function tone(freq, start, dur, vol=0.2, type='sine') {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = type;
+      o.frequency.value = freq;
+      o.connect(g);
+      g.connect(ctx.destination);
+      g.gain.setValueAtTime(0, start);
+      g.gain.linearRampToValueAtTime(vol, start + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+      o.start(start);
+      o.stop(start + dur);
+    }
+
+    // Acordes tipo “tadaaa”
+    tone(523.25, now, 0.4, 0.25, 'triangle'); // C5
+    tone(659.25, now, 0.4, 0.25, 'triangle'); // E5
+    tone(783.99, now, 0.4, 0.25, 'triangle'); // G5
+    tone(1046.5, now + 0.4, 0.6, 0.2, 'sine'); // C6
+    tone(1318.5, now + 0.4, 0.6, 0.2, 'sine'); // E6
+    tone(1567.98, now + 0.4, 0.6, 0.2, 'sine'); // G6
+    tone(2093, now + 1.0, 0.8, 0.18, 'square'); // C7 para cierre brillante
+  } catch (e) { console.error(e); }
+}
+
+function playLoseJingle(){
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
+
+    function tone(freq, start, dur, vol=0.25, type='sine') {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = type;
+      o.frequency.value = freq;
+      o.connect(g);
+      g.connect(ctx.destination);
+      g.gain.setValueAtTime(0, start);
+      g.gain.linearRampToValueAtTime(vol, start + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+      o.start(start);
+      o.stop(start + dur);
+    }
+
+    // Tres notas descendentes (C4 → A3 → F3)
+    tone(261.63, now,      0.35, 0.25, 'sawtooth');
+    tone(220.00, now + 0.35, 0.35, 0.25, 'sawtooth');
+    tone(174.61, now + 0.70, 0.6,  0.25, 'triangle');
+  } catch (e) { console.error(e); }
+}
+
 
 /* ---------- Cooldown / giros ---------- */
-const COOLDOWN_SECONDS = 5;
+const COOLDOWN_SECONDS = 3;
 let cooldownTimer = null;
 let cooldownEndTs = 0;
 
@@ -323,6 +379,71 @@ function pickTargetIndexForResult(isWin){
     .map(x => x.i);
   return indices[Math.floor(Math.random() * indices.length)];
 }
+
+function celebrateWinDeluxe(){
+  // Respeta usuarios con reducción de movimiento
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    try { confetti({ particleCount: 100, spread: 60, origin: { y: 0.7 } }); } catch(e){}
+    return;
+  }
+
+  const duration = 2000; // ms totales de celebración
+  const animationEnd = Date.now() + duration;
+
+  // 1) Explosión inicial
+  try {
+    confetti({ particleCount: 180, spread: 70, origin: { y: 0.6 }, scalar: 0.9 });
+  } catch(e){}
+
+  // 2) Cañones laterales repetidos
+  const defaults = { startVelocity: 25, ticks: 200, zIndex: 1000 };
+  const sideInterval = setInterval(() => {
+    try {
+      confetti(Object.assign({}, defaults, { particleCount: 10, angle: 60,  spread: 55, origin: { x: 0,   y: 0.7 } }));
+      confetti(Object.assign({}, defaults, { particleCount: 10, angle: 120, spread: 55, origin: { x: 1,   y: 0.7 } }));
+    } catch(e){}
+    if (Date.now() > animationEnd) clearInterval(sideInterval);
+  }, 120);
+
+  // 3) Lluvia desde arriba (aleatoria horizontal)
+  (function shower() {
+    const timeLeft = animationEnd - Date.now();
+    if (timeLeft <= 0) return;
+    const particleCount = Math.round(50 * (timeLeft / duration)); // va bajando con el tiempo
+    try {
+      confetti({ particleCount, startVelocity: 30, spread: 85, origin: { x: Math.random(), y: -0.1 } });
+    } catch(e){}
+    requestAnimationFrame(shower);
+  })();
+}
+
+// --- Confetti de tachas (X) rojas ---
+let X_SHAPE = null;
+try {
+  // Crea una forma personalizada a partir de texto/emoji
+  X_SHAPE = confetti.shapeFromText({ text: '✖', scalar: 2 });
+} catch(e) {
+  // fallback silencioso si no existe shapeFromText en la versión
+  X_SHAPE = null;
+}
+
+function loseConfettiX(){
+  // Respeta reducción de movimiento
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  try {
+    confetti({
+      particleCount: 100,            // cantidad de tachas
+      spread: 70,                    // apertura del disparo
+      startVelocity: 30,             // velocidad inicial
+      origin: { y: 0.65 },           // desde el centro-bajo
+      shapes: X_SHAPE ? [X_SHAPE] : undefined,
+      colors: ['#ff1744', '#d50000', '#b71c1c']
+    });
+  } catch(e){}
+}
+
+
 function spin(){
   if (!canSpin()) return;
   spinning = true;
@@ -364,15 +485,28 @@ function spin(){
       statusEl.textContent = "Resultado: " + winner.label;
       setCenterText(winner.label, winner.label === 'GANADOR');
 
-      badge.textContent = winner.label;
-      badge.className = "badge " + (winner.label === "GANADOR" ? "win" : "lose");
+      if (winner.label === "GANADOR") {
+        badge.innerHTML = '<span class="badge-win">GANADOR</span>';
+        badge.className = "badge win";
+      } else {
+        badge.innerHTML = '<span class="badge-lose"><span class="badge-no">NO</span> GANADOR</span>';
+        badge.className = "badge lose";
+      }
       sub.textContent = (winner.label === "GANADOR")
         ? "¡Felicidades! Pasa a canjear tu premio."
         : "Gracias por participar.";
+        
       overlay.classList.add("show");
       centerText.style.visibility = 'hidden';
       if (navigator.vibrate) { navigator.vibrate(100); }
-      ding();
+      if (winner.label === "GANADOR") {
+        celebrateWinDeluxe(); // 🎉 confetti deluxe
+        playWinJingle(); // 🎵 tu “tadaaa” largo
+        } else {
+            loseConfettiX();     // ❌ confetti de tachas rojas
+          playLoseJingle();    // 🎺 wah-wah
+          }
+
 
       pendingResult = winner.label;
       spinning = false;
@@ -602,6 +736,14 @@ function boot(){
 /* Eventos básicos */
 btnSpin && btnSpin.addEventListener('click', spin, { passive:true });
 wheel && wheel.addEventListener('click', ()=>{ if(canSpin()) spin(); }, { passive:true });
+// NUEVO: permitir clic en toda el área de la ruleta (section.wheel-area)
+const wheelArea = document.querySelector('.wheel-area');
+wheelArea && wheelArea.addEventListener('click', (e)=>{
+  // Evita que clics en controles o botones interfieran
+  const isControl = e.target.closest('#configPanel, .controls, button, a, input, select, textarea');
+  if (isControl) return;
+  if (canSpin()) spin();
+}, { passive:true });
 window.addEventListener('keydown', (e)=>{
   if (e.key === 'Escape' && configPanel && configPanel.classList.contains('show')) closeConfigPanel();
 });

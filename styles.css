@@ -360,3 +360,11 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 /* Separadores y subtítulos */
 .cfg-sep { margin: 16px 0; border-top: 1px solid #e6ebe6; }
 .cfg-subtitle { font-weight: 800; margin-bottom: 6px; color: #1b1f1d; }
+
+.badge-no {
+  color: #d50000; /* rojo intenso */
+  font-weight: 800;
+}
+.badge-lose {
+  color: #004d25; /* mantiene el verde oscuro para "GANADOR" */
+}
