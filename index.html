@@ -4,21 +4,32 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gana con MASECA</title>
-  <!-- estilos (me los pides después) -->
   <link rel="stylesheet" href="styles.css" />
   <link rel="shortcut icon" type="image/png" href="/images/favicon.png" />
 </head>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <body>
   <main class="wrap">
-    <!-- Encabezado (logo alineado con la ruleta + título centrado) -->
+    <!-- Encabezado -->
     <header class="header">
       <img
         src="https://www.maseca.com.mx/media/1911/logo_maseca-2x.png"
         alt="Logo MASECA"
         class="logo-maseca"
       />
-      <h1>Gana con MASECA</h1>
+      <div class="header-title-wrap">
+        <h1>Gana con MASECA</h1>
+        <!-- 🌍 MUNDIAL: banderas decorativas (solo visibles con .mundial-theme) -->
+        <div class="mundial-bunting" aria-hidden="true">
+          <span class="mflag mx"></span>
+          <span class="mflag br"></span>
+          <span class="mflag ar"></span>
+          <span class="mflag de"></span>
+          <span class="mflag fr"></span>
+          <span class="mflag es"></span>
+          <span class="mball">⚽</span>
+        </div>
+      </div>
     </header>
 
     <!-- Ruleta -->
@@ -34,10 +45,9 @@
     <section class="controls">
       <div class="row">
         <button id="btnSpin">Girar</button>
-        <div id="pillSpins" class="pill">Giros: 0 / ∞</div>
+        <div id="pillSpins" class="pill">Participaciones: 0 / ∞</div>
       </div>
       <p id="status" class="status">Listo para girar.</p>
-      <!-- <p id="pinDisplay" class="status"></p> -->
     </section>
   </main>
 
@@ -84,6 +94,7 @@
 
     <!-- PANE: Ajustes -->
     <section id="paneSettings" class="cfg-pane show" role="tabpanel" aria-labelledby="tabSettings">
+      <!-- FIX: configForm ya NO envuelve al pinForm (formularios anidados son inválidos en HTML) -->
       <form id="configForm" class="config-form" autocomplete="off">
         <div class="cfg-grid">
           <div class="cfg-row">
@@ -109,35 +120,47 @@
           <button type="submit" id="btnCfgSave" class="primary">Guardar ajustes</button>
           <button type="button" id="btnCfgResetAll">Reiniciar todo</button>
         </div>
-
-        <div class="cfg-sep"></div>
-
-        <!-- Bloque: administrador (cambio de PIN) -->
-        <h3 class="cfg-subtitle">Administrador</h3>
-        <form id="pinForm" class="config-form">
-          <div class="cfg-grid">
-            <div class="cfg-row">
-              <label for="pinOld">PIN actual</label>
-              <input type="password" id="pinOld" inputmode="numeric" maxlength="8" placeholder="••••" />
-            </div>
-            <div class="cfg-row">
-              <label for="pinNew">Nuevo PIN (4–8 dígitos)</label>
-              <input type="password" id="pinNew" inputmode="numeric" maxlength="8" placeholder="••••" />
-            </div>
-            <div class="cfg-row">
-              <label for="pinNew2">Confirmar nuevo PIN</label>
-              <input type="password" id="pinNew2" inputmode="numeric" maxlength="8" placeholder="••••" />
-            </div>
-          </div>
-
-          <p id="pinChangeMsg" class="pin-msg" aria-live="polite"></p>
-
-          <div class="cfg-actions">
-            <button type="submit" class="primary">Cambiar PIN</button>
-            <button type="button" id="btnPinResetDefault">Restablecer a 2468</button>
-          </div>
-        </form>
       </form>
+
+      <div class="cfg-sep"></div>
+
+      <!-- Bloque: administrador (cambio de PIN) — formulario separado, NO anidado -->
+      <h3 class="cfg-subtitle">Administrador</h3>
+      <form id="pinForm" class="config-form" autocomplete="off">
+        <div class="cfg-grid">
+          <div class="cfg-row">
+            <label for="pinOld">PIN actual</label>
+            <input type="password" id="pinOld" inputmode="numeric" maxlength="8" placeholder="••••" />
+          </div>
+          <div class="cfg-row">
+            <label for="pinNew">Nuevo PIN (4–8 dígitos)</label>
+            <input type="password" id="pinNew" inputmode="numeric" maxlength="8" placeholder="••••" />
+          </div>
+          <div class="cfg-row">
+            <label for="pinNew2">Confirmar nuevo PIN</label>
+            <input type="password" id="pinNew2" inputmode="numeric" maxlength="8" placeholder="••••" />
+          </div>
+        </div>
+        <p id="pinChangeMsg" class="pin-msg" aria-live="polite"></p>
+        <div class="cfg-actions">
+          <button type="submit" class="primary">Cambiar PIN</button>
+          <button type="button" id="btnPinResetDefault">Restablecer a 2468</button>
+        </div>
+      </form>
+
+      <!-- 🌍 MUNDIAL: toggle de tema (fácil de remover después del mundial) -->
+      <div class="cfg-sep"></div>
+      <h3 class="cfg-subtitle">Tema especial</h3>
+      <div class="cfg-row mundial-toggle-row">
+        <label for="toggleMundial" class="toggle-label">
+          ⚽ Activar tema Mundial
+        </label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggleMundial" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <!-- FIN MUNDIAL -->
 
       <div class="cfg-footer">
         <button id="btnCfgCloseBottom" type="button">Cerrar</button>
@@ -153,18 +176,32 @@
           <button id="btnLogExport" type="button" class="primary">Exportar CSV</button>
         </div>
       </div>
-
-      <ol id="logList" class="log-list" start="1">
-        <!-- items del log (JS) -->
-      </ol>
-
+      <ol id="logList" class="log-list" start="1"></ol>
       <div class="cfg-footer">
         <button id="btnCfgCloseBottom2" type="button">Cerrar</button>
       </div>
     </section>
   </div>
 
-  <!-- scripts (me pides el JS después) -->
   <script src="script.js"></script>
+
+  <!-- 🌍 MUNDIAL: script inline del toggle (fácil de identificar y borrar) -->
+  <script>
+    (function(){
+      const MUNDIAL_KEY = 'maseca_mundial_theme';
+      const toggle = document.getElementById('toggleMundial');
+      if (!toggle) return;
+      // Restaurar preferencia guardada
+      const saved = localStorage.getItem(MUNDIAL_KEY) === '1';
+      toggle.checked = saved;
+      document.body.classList.toggle('mundial-theme', saved);
+      toggle.addEventListener('change', () => {
+        const active = toggle.checked;
+        document.body.classList.toggle('mundial-theme', active);
+        localStorage.setItem(MUNDIAL_KEY, active ? '1' : '0');
+      });
+    })();
+  </script>
+  <!-- FIN MUNDIAL -->
 </body>
 </html>
