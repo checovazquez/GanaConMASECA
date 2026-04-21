@@ -1,3 +1,7 @@
+/* =========================================================================
+   Gana con MASECA – styles.css
+   ======================================================================= */
+
 :root {
   --maseca-green: #00843D;
   --maseca-green-600: #006c33;
@@ -15,6 +19,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Inter, Arial;
+  transition: background 0.4s ease;
 }
 
 .wrap { max-width: 980px; margin: 24px auto; padding: 0 16px; }
@@ -60,6 +65,7 @@ h1 {
     0 10px 24px rgba(0, 0, 0, .05),
     inset 0 0 0 8px var(--maseca-yellow),
     inset 0 0 0 14px var(--maseca-green);
+  transition: box-shadow 0.4s ease;
 }
 .pointer {
   position: absolute;
@@ -72,6 +78,7 @@ h1 {
   border-right: 16px solid transparent;
   border-top: 26px solid var(--maseca-yellow);
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .15));
+  transition: border-top-color 0.4s ease;
 }
 .center-text {
   position: absolute;
@@ -90,6 +97,7 @@ h1 {
   display: grid;
   place-items: center;
   line-height: 1.1;
+  transition: border-color 0.4s ease;
 }
 
 /* ==== CONTROLS ==== */
@@ -110,8 +118,9 @@ button {
   padding: 12px 18px;
   cursor: pointer;
   box-shadow: 0 8px 18px rgba(0, 132, 61, .25);
+  transition: background 0.2s ease;
 }
-button:hover { background: var(--maseca-yellow); }
+button:hover { background: var(--maseca-yellow); color: var(--text); }
 button:disabled { opacity: .6; cursor: not-allowed; }
 .status { color: var(--muted); margin: 12px 0 0; min-height: 24px; text-align: center; }
 .pill {
@@ -150,7 +159,7 @@ button:disabled { opacity: .6; cursor: not-allowed; }
   font-size: clamp(30px, 6vw, 48px);
   text-transform: uppercase;
 }
-.badge.win { color: var(--maseca-green); }
+.badge.win  { color: var(--maseca-green); }
 .badge.lose { color: var(--maseca-green-600); }
 .sub { margin-top: 4px; color: #3b3f3c; }
 .dialog button {
@@ -166,41 +175,29 @@ button:disabled { opacity: .6; cursor: not-allowed; }
   right: 24px;
   bottom: 24px;
   z-index: 1200;
-
   width: 56px;
   height: 56px;
   border-radius: 50%;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   background: #fff;
   color: var(--maseca-green);
   border: 1px solid var(--maseca-green);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-
   font-size: 26px;
   cursor: pointer;
-  transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease,
-    border-color 0.25s ease,
-    color 0.25s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 .fab-config:hover {
   transform: scale(1.07) rotate(20deg);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
-  border-color: var(--maseca-green-600);
-  color: var(--maseca-green-600);
 }
 @keyframes spin360 {
   from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  to   { transform: rotate(360deg); }
 }
-.fab-config.spin {
-  animation: spin360 0.8s ease-in-out;
-}
+.fab-config.spin { animation: spin360 0.8s ease-in-out; }
 
 /* ==== PIN MODAL ==== */
 .overlay-pin { z-index: 1500; }
@@ -224,7 +221,7 @@ button:disabled { opacity: .6; cursor: not-allowed; }
   text-align: center;
   outline: none;
 }
-.pin-input:focus { border-color: #b8c2b8; }
+.pin-input:focus { border-color: var(--maseca-green-light); }
 .pin-msg {
   min-height: 18px;
   margin: 8px 0 0;
@@ -272,7 +269,6 @@ button:disabled { opacity: .6; cursor: not-allowed; }
   overflow-y: auto;
 }
 .config-panel.show { transform: translateX(0); }
-
 .config-header {
   display: flex;
   align-items: center;
@@ -281,8 +277,9 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 }
 .config-header h2 { margin: 0; font-size: 1.1rem; color: #1b1f1d; }
 .icon-btn {
-  background: #46af46;
-  border: 1px solid #e0e5e0;
+  background: var(--maseca-green);
+  color: #fff;
+  border: none;
   border-radius: 8px;
   padding: 6px 10px;
   cursor: pointer;
@@ -298,12 +295,14 @@ button:disabled { opacity: .6; cursor: not-allowed; }
   flex: 1;
   background: transparent;
   border: none;
+  box-shadow: none;
   padding: 10px;
   font-weight: 700;
   color: #555;
   cursor: pointer;
   border-bottom: 3px solid transparent;
 }
+.cfg-tab:hover { background: #f5f5f5; color: var(--text); }
 .cfg-tab.is-active {
   color: var(--maseca-green);
   border-color: var(--maseca-green);
@@ -312,6 +311,16 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 /* ==== PANE ==== */
 .cfg-pane { display: none; }
 .cfg-pane.show { display: block; }
+.cfg-pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.cfg-pane-actions { display: flex; gap: 8px; }
+
 .cfg-grid { display: grid; gap: 12px; margin-bottom: 12px; }
 .cfg-row label { display: block; font-weight: 600; margin-bottom: 4px; }
 .cfg-row input {
@@ -343,7 +352,8 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 .cfg-footer button {
   border: 1px solid #ccc;
   border-radius: 8px;
-  background: #000000;
+  background: #333;
+  color: #fff;
   padding: 8px 16px;
   cursor: pointer;
 }
@@ -359,12 +369,193 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 
 /* Separadores y subtítulos */
 .cfg-sep { margin: 16px 0; border-top: 1px solid #e6ebe6; }
-.cfg-subtitle { font-weight: 800; margin-bottom: 6px; color: #1b1f1d; }
+.cfg-subtitle { font-weight: 800; margin: 8px 0 6px; color: #1b1f1d; }
 
-.badge-no {
-  color: #d50000; /* rojo intenso */
-  font-weight: 800;
+.badge-no   { color: #d50000; font-weight: 800; }
+.badge-lose { color: #004d25; }
+
+/* ==================================================================
+   🌍 MUNDIAL 2026 — TEMA TEMPORAL
+   Para quitar el tema después del mundial, solo borra desde aquí...
+   ================================================================== */
+
+/* Toggle switch */
+.mundial-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
 }
-.badge-lose {
-  color: #004d25; /* mantiene el verde oscuro para "GANADOR" */
+.toggle-label { font-weight: 600; }
+.toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0;
+  background: #ccc; border-radius: 24px; cursor: pointer;
+  transition: background 0.3s;
 }
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  left: 3px; top: 3px;
+  background: #fff; border-radius: 50%;
+  transition: transform 0.3s;
+}
+.toggle-switch input:checked + .toggle-slider { background: var(--maseca-green); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+/* Variables de tema mundialista */
+body.mundial-theme {
+  --bg: #0a1628;
+  --text: #f0f4ff;
+  --muted: #8899bb;
+  background: linear-gradient(160deg, #0a1628 0%, #0d2040 60%, #0a1a30 100%);
+}
+
+/* Header mundialista */
+body.mundial-theme h1 {
+  color: #FFD200;
+  text-shadow: 0 0 20px rgba(255, 210, 0, 0.5), 0 2px 0 #000;
+}
+/* Wrap el título + banderas en columna */
+body.mundial-theme .header {
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 18px;
+}
+
+/* Subtítulo mundialista (solo visible con tema) */
+.mundial-bunting {
+  display: none;
+  /* Ya no es absolute — fluye debajo del h1 en el flex del header */
+  gap: 10px;
+  white-space: nowrap;
+  align-items: center;
+  justify-content: center;
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+body.mundial-theme .mundial-bunting { display: flex; }
+
+/* Wrapper título + banderas */
+.header-title-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Mini banderas — solo color, sin texto */
+.mflag {
+  display: inline-block;
+  width: 32px;
+  height: 22px;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.15);
+  flex-shrink: 0;
+}
+.mflag.mx { background: linear-gradient(to right, #006847 33%, #fff 33%, #fff 66%, #ce1126 66%); }
+.mflag.br { background: linear-gradient(to bottom, #009C3B 40%, #FEDD00 40%, #FEDD00 60%, #009C3B 60%); }
+.mflag.ar { background: linear-gradient(to bottom, #74ACDF 33%, #fff 33%, #fff 66%, #74ACDF 66%); }
+.mflag.de { background: linear-gradient(to bottom, #000 33%, #D00 33%, #D00 66%, #FFCE00 66%); }
+.mflag.fr { background: linear-gradient(to right, #002395 33%, #fff 33%, #fff 66%, #ED2939 66%); }
+.mflag.es { background: linear-gradient(to bottom, #c60b1e 25%, #ffc400 25%, #ffc400 75%, #c60b1e 75%); }
+.mball { font-size: 1.4rem; line-height: 1; }
+
+/* Balón dibujado en canvas – no necesita CSS */
+
+/* Ruleta mundialista */
+body.mundial-theme #wheel {
+  box-shadow:
+    0 0 0 8px #FFD200,
+    0 0 0 14px #1a3a6e,
+    0 0 30px rgba(255, 210, 0, 0.3),
+    0 10px 24px rgba(0, 0, 0, 0.5);
+}
+body.mundial-theme .pointer { border-top-color: #FFD200; }
+body.mundial-theme .center-text {
+  background: transparent;   /* el canvas dibuja el balón + fondo debajo */
+  border-color: #FFD200;
+  color: #FFD200;
+}
+body.mundial-theme .center-text.win  { color: #000000; border-color: #FFD200; }
+body.mundial-theme .center-text.lose { color: #000000; border-color: #FFD200; }
+
+/* Botón girar mundialista */
+body.mundial-theme #btnSpin {
+  background: linear-gradient(135deg, #1a3a6e, #0d2040);
+  border: 2px solid #FFD200;
+  box-shadow: 0 0 16px rgba(255, 210, 0, 0.3);
+}
+body.mundial-theme #btnSpin:hover:not(:disabled) {
+  background: #FFD200;
+  color: #0a1628;
+}
+
+/* Pill mundialista */
+body.mundial-theme .pill {
+  background: rgba(255,255,255,0.07);
+  border-color: #1a3a6e;
+  color: #c8d8ff;
+}
+
+/* Dialog mundialista */
+body.mundial-theme .dialog {
+  background: #ffffff;
+  border-color: #FFD200;
+  color: #f0f4ff;
+}
+body.mundial-theme .badge.win  { color: #00e676; }
+body.mundial-theme .badge.lose { color: #ff7043; }
+body.mundial-theme .sub        { color: #a0b4d8; }
+body.mundial-theme .dialog button { background: #FFD200; color: #0a1628; }
+
+/* Panel de config mundialista */
+body.mundial-theme .config-panel {
+  background: #233e69;
+  border-color: #1a3a6e;
+  color: #f0f4ff;
+}
+body.mundial-theme .config-header h2 { color: #f0f4ff; }
+body.mundial-theme .cfg-subtitle     { color: #FFD200; }
+body.mundial-theme .cfg-tab          { color: #8899bb; }
+body.mundial-theme .cfg-tab:hover    { background: rgba(255,255,255,0.05); color: #f0f4ff; }
+body.mundial-theme .cfg-tab.is-active { color: #FFD200; border-color: #FFD200; }
+body.mundial-theme .cfg-row label    { color: #c8d8ff; }
+body.mundial-theme .cfg-row input {
+  background: #0a1628; border-color: #1a3a6e; color: #f0f4ff;
+}
+body.mundial-theme .calc-list        { color: #c8d8ff; }
+body.mundial-theme .log-list li      { border-color: rgba(255,255,255,0.07); color: #c8d8ff; }
+body.mundial-theme .cfg-sep          { border-color: #1a3a6e; }
+body.mundial-theme .cfg-footer button { background: #1a3a6e; border-color: #2a4a7e; color: #f0f4ff; }
+
+/* PIN modal mundialista */
+body.mundial-theme .pin-dialog {
+  background: #0d1f3c;
+  border-color: #1a3a6e;
+  color: #f0f4ff;
+}
+body.mundial-theme .pin-dialog h3  { color: #f0f4ff; }
+body.mundial-theme .pin-help       { color: #8899bb; }
+body.mundial-theme .pin-input {
+  background: #0a1628; border-color: #1a3a6e; color: #f0f4ff;
+}
+body.mundial-theme .btn-secondary {
+  background: #1a3a6e; color: #f0f4ff; border-color: #2a4a7e;
+}
+
+/* FAB mundialista */
+body.mundial-theme .fab-config {
+  background: #0d1f3c;
+  border-color: #FFD200;
+  color: #FFD200;
+}
+
+/* Status text */
+body.mundial-theme .status { color: #8899bb; }
+
+/* ... hasta aquí para quitar el tema mundialista. */
+/* ================================================================== */
