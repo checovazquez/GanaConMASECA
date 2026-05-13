@@ -559,3 +559,291 @@ body.mundial-theme .status { color: #8899bb; }
 
 /* ... hasta aquí para quitar el tema mundialista. */
 /* ================================================================== */
+
+
+/* ==================================================================
+   LOGIN SCREEN
+   ================================================================== */
+
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: linear-gradient(160deg, #00843D 0%, #006c33 50%, #004d24 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-box {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .35);
+  padding: 36px 32px 32px;
+  width: min(100%, 400px);
+  text-align: center;
+}
+
+.login-logo {
+  width: clamp(60px, 14vw, 90px);
+  height: auto;
+  margin-bottom: 16px;
+}
+
+.login-title {
+  margin: 0 0 6px;
+  font-size: clamp(1.4rem, 4vw, 1.9rem);
+  font-weight: 900;
+  color: var(--maseca-green);
+  line-height: 1.1;
+}
+
+.login-sub {
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: .95rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.login-label {
+  font-weight: 700;
+  font-size: .88rem;
+  color: #3a3f3b;
+  margin-bottom: 2px;
+  display: block;
+}
+
+.login-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #d4d9d4;
+  border-radius: 10px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color .2s;
+}
+.login-input:focus { border-color: var(--maseca-green); }
+
+.login-msg {
+  min-height: 18px;
+  font-size: .88rem;
+  font-weight: 700;
+  color: #c0392b;
+  text-align: center;
+  margin: 2px 0 0;
+}
+
+.login-btn {
+  margin-top: 6px;
+  width: 100%;
+  padding: 14px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  background: var(--maseca-green);
+  color: #fff;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0, 132, 61, .3);
+  transition: background .2s;
+}
+.login-btn:hover:not(:disabled) { background: var(--maseca-green-600); }
+.login-btn:disabled { opacity: .65; cursor: not-allowed; }
+
+/* ── Combobox buscable ── */
+.combo-wrap {
+  position: relative;
+}
+
+.combo-input {
+  padding-right: 36px;  /* espacio para la flecha */
+  cursor: pointer;
+}
+.combo-input:focus { cursor: text; }
+
+.combo-arrow {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: .85rem;
+  color: var(--muted);
+  pointer-events: none;
+  transition: transform .2s;
+}
+.combo-wrap:focus-within .combo-arrow {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.combo-list {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  z-index: 500;
+  background: #fff;
+  border: 1.5px solid var(--maseca-green);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.14);
+  max-height: 220px;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  scroll-behavior: smooth;
+}
+.combo-list.open { display: block; }
+
+.combo-list li {
+  padding: 9px 14px;
+  cursor: pointer;
+  font-size: .9rem;
+  color: var(--text);
+  transition: background .1s;
+  border-radius: 6px;
+  margin: 2px 4px;
+}
+.combo-list li:hover,
+.combo-list li.combo-hl   { background: #e8f5ee; }
+.combo-list li.combo-active {
+  background: var(--maseca-green);
+  color: #fff;
+  font-weight: 700;
+}
+
+
+/* ==================================================================
+   BARRA DE USUARIO
+   ================================================================== */
+
+.user-bar {
+  position: sticky;
+  top: 0;
+  z-index: 900;
+  background: var(--maseca-green);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  font-size: .88rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .12);
+}
+
+.user-bar-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-bar-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.user-bar-btn {
+  background: rgba(255, 255, 255, .18);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, .35);
+  border-radius: 8px;
+  padding: 5px 11px;
+  font-size: .83rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background .15s;
+}
+.user-bar-btn:hover { background: rgba(255, 255, 255, .30); color: #fff; }
+.user-bar-logout { background: rgba(255, 255, 255, .08); }
+
+
+/* ==================================================================
+   PANEL HISTORIAL DE TIENDA
+   ================================================================== */
+
+.history-panel {
+  position: fixed;
+  top: 0; right: 0;
+  height: 100%;
+  width: min(92vw, 380px);
+  background: #fff;
+  border-left: 1px solid #e8ebe8;
+  box-shadow: -12px 0 40px rgba(0, 0, 0, .18);
+  transform: translateX(110%);
+  transition: transform .25s ease;
+  z-index: 1400;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.history-panel.show { transform: translateX(0); }
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e8ebe8;
+  flex-shrink: 0;
+}
+.history-header h2 { margin: 0; font-size: 1.05rem; color: #1b1f1d; }
+
+.history-list {
+  list-style: none;
+  padding: 8px 16px;
+  margin: 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.history-list li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid #f1f4f1;
+  font-size: .88rem;
+}
+
+.hist-date  { color: #4a4f4b; }
+.hist-time  { color: var(--muted); font-size: .82rem; }
+.hist-result { font-weight: 800; text-align: right; }
+
+.hist-win  .hist-result { color: var(--maseca-green); }
+.hist-lose .hist-result { color: #888; }
+
+.hist-loading,
+.hist-empty,
+.hist-error {
+  text-align: center;
+  color: var(--muted);
+  padding: 24px 0;
+  font-size: .92rem;
+  list-style: none;
+}
+.hist-error { color: #c0392b; }
+
+/* Enlace al dashboard de admin en el panel de config */
+.admin-link-btn {
+  display: inline-block;
+  background: var(--maseca-green);
+  color: #fff;
+  font-weight: 700;
+  font-size: .9rem;
+  border-radius: 8px;
+  padding: 9px 14px;
+  text-decoration: none;
+  transition: background .2s;
+}
+.admin-link-btn:hover { background: var(--maseca-green-600); }

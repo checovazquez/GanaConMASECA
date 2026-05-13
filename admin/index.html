@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — Gana con MASECA</title>
+  <link rel="shortcut icon" type="image/png" href="/images/favicon.png" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+  <!-- ══ LOGIN DE ADMINISTRADOR ══════════════════════════════════════════ -->
+  <div id="adminLogin" class="a-login-overlay">
+    <div class="a-login-box">
+      <img
+        src="https://www.maseca.com.mx/media/1911/logo_maseca-2x.png"
+        alt="Logo MASECA"
+        class="a-login-logo"
+      />
+      <h1>Panel Administrador</h1>
+      <p class="a-login-sub">Acceso exclusivo para administradores</p>
+      <div class="a-login-form">
+        <input id="aEmail"    type="email"    class="a-input" placeholder="admin@maseca.com" autocomplete="username" />
+        <input id="aPassword" type="password" class="a-input" placeholder="Contraseña"       autocomplete="current-password" />
+        <p id="aMsg" class="a-msg" aria-live="polite"></p>
+        <button id="aLoginBtn" class="a-btn" type="button">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DASHBOARD ══════════════════════════════════════════════════════ -->
+  <div id="adminApp" class="a-app" style="display:none">
+
+    <!-- Header -->
+    <header class="a-header">
+      <div class="a-header-left">
+        <img src="https://www.maseca.com.mx/media/1911/logo_maseca-2x.png" alt="MASECA" class="a-header-logo" />
+        <div>
+          <h1 class="a-header-title">Dashboard Administrativo</h1>
+          <p class="a-header-sub">Gana con MASECA</p>
+        </div>
+      </div>
+      <div class="a-header-right">
+        <span id="aAdminEmail" class="a-admin-email"></span>
+        <button id="aLogoutBtn" class="a-btn-sm">Salir</button>
+      </div>
+    </header>
+
+    <!-- Contenido principal -->
+    <main class="a-main">
+
+      <!-- Indicadores resumen -->
+      <section class="a-section">
+        <h2 class="a-section-title">Resumen general</h2>
+        <div class="a-kpi-grid">
+          <div class="a-kpi">
+            <span class="a-kpi-value" id="kpiTotalSpins">—</span>
+            <span class="a-kpi-label">Total de giros</span>
+          </div>
+          <div class="a-kpi a-kpi-win">
+            <span class="a-kpi-value" id="kpiTotalWinners">—</span>
+            <span class="a-kpi-label">Total ganadores</span>
+          </div>
+          <div class="a-kpi">
+            <span class="a-kpi-value" id="kpiActiveStores">—</span>
+            <span class="a-kpi-label">Tiendas activas</span>
+          </div>
+          <div class="a-kpi">
+            <span class="a-kpi-value" id="kpiTodaySpins">—</span>
+            <span class="a-kpi-label">Giros hoy</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Gráfica: participaciones por hora -->
+      <section class="a-section">
+        <h2 class="a-section-title">Participaciones por horario</h2>
+        <div class="a-chart-wrap">
+          <div id="chartHours" class="a-bar-chart"></div>
+        </div>
+      </section>
+
+      <!-- Ranking de tiendas -->
+      <section class="a-section">
+        <h2 class="a-section-title">Ranking de tiendas</h2>
+        <div id="rankingList" class="a-ranking"></div>
+      </section>
+
+      <!-- Tabla de logs -->
+      <section class="a-section">
+        <div class="a-table-header">
+          <h2 class="a-section-title" style="margin:0">Todos los registros</h2>
+          <div class="a-table-controls">
+            <input id="filterStore" type="text" class="a-filter-input" placeholder="Filtrar por tienda…" />
+            <select id="filterResult" class="a-filter-select">
+              <option value="">Todos</option>
+              <option value="GANADOR">Solo ganadores</option>
+              <option value="NO GANADOR">Solo no ganadores</option>
+            </select>
+            <button id="btnExportAll" class="a-btn-outline" type="button">Exportar CSV</button>
+            <button id="btnRefresh"   class="a-btn-sm"     type="button">Actualizar</button>
+          </div>
+        </div>
+        <div class="a-table-wrap">
+          <table class="a-table">
+            <thead>
+              <tr>
+                <th>Tienda</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Resultado</th>
+              </tr>
+            </thead>
+            <tbody id="logsBody"></tbody>
+          </table>
+          <p id="logsEmpty" class="a-empty" style="display:none">Sin registros.</p>
+        </div>
+      </section>
+
+      <!-- Configuración global -->
+      <section class="a-section">
+        <h2 class="a-section-title">Configuración global de la ruleta</h2>
+        <form id="adminCfgForm" class="a-cfg-form">
+          <div class="a-cfg-grid">
+            <div class="a-cfg-row">
+              <label for="aCfgWinnersTotal">Ganadores por tienda (stock)</label>
+              <input id="aCfgWinnersTotal" type="number" min="0" step="1" class="a-input-sm" />
+            </div>
+            <div class="a-cfg-row">
+              <label for="aCfgWinProbX">Probabilidad de ganar (1 en X)</label>
+              <input id="aCfgWinProbX" type="number" min="1" step="1" class="a-input-sm" />
+            </div>
+          </div>
+          <p class="a-cfg-note">
+            Participaciones totales por tienda = Ganadores × X<br>
+            Estos valores se aplican a <strong>todas las tiendas</strong> en su próximo inicio de sesión.
+          </p>
+          <button type="submit" class="a-btn">Guardar configuración</button>
+          <span id="aCfgMsg" class="a-cfg-msg"></span>
+        </form>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="../firebase-config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

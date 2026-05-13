@@ -1,0 +1,11 @@
+# Service Account Keys — nunca subir al repo
+*-adminsdk-*.json
+serviceAccountKey*.json
+
+# Node
+node_modules/
+package-lock.json
+
+# Archivos locales
+usuarios_contrasenas_maseca.xlsx
+crear-usuarios.js

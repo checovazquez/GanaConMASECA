@@ -573,6 +573,13 @@ btnOk && btnOk.addEventListener('click', () => {
   if (pendingResult){
     const now   = new Date();
     const tsKey = todayKey();
+
+    // Guardar en Firestore (no bloquea la UI)
+    if (typeof window.fbSaveSpin === 'function') {
+      window.fbSaveSpin(pendingResult);
+    }
+
+    // Mantener log local para la sesión actual
     LOG.push({ ts: `${tsKey}-${now.toISOString()}`, result: pendingResult });
     saveLog(LOG);
     if (pendingResult === 'GANADOR'){ winnersGiven += 1; saveWinnersGiven(); }
@@ -667,6 +674,10 @@ configForm && configForm.addEventListener('submit', (e) => {
   e.preventDefault();
   CFG = { ...CFG, ...readSettingsForm() };
   saveCfg(CFG);
+  // Sincronizar config a Firestore si el usuario es admin
+  if (typeof window.fbSaveConfig === 'function') {
+    window.fbSaveConfig({ winnersTotal: CFG.winnersTotal, winProbX: CFG.winProbX });
+  }
   const tot = totalParticipations();
   if (spins > tot){ spins = tot; saveSpins(); }
   updatePill();
@@ -785,5 +796,29 @@ wheelArea && wheelArea.addEventListener('click', (e) => {
   if (canSpin()) spin();
 }, { passive: true });
 
-/* Inicia */
-boot();
+/*
+ * bootApp — llamado por firebase-app.js después de autenticar.
+ * Inicializa los contadores con los valores de Firestore si están disponibles,
+ * luego llama a boot() que dibuja la ruleta y activa los controles.
+ */
+window.bootApp = function () {
+  // Sobreescribir contadores con datos de Firestore (cargados antes de llamar aquí)
+  if (typeof window.FB_STORE_SPINS !== 'undefined') {
+    spins = window.FB_STORE_SPINS;
+    localStorage.setItem(SPINS_KEY, String(spins));
+  }
+  if (typeof window.FB_STORE_WINNERS !== 'undefined') {
+    winnersGiven = window.FB_STORE_WINNERS;
+    localStorage.setItem(GIVEN_KEY, String(winnersGiven));
+  }
+  if (window.FB_CONFIG) {
+    CFG = { ...DEFAULT_CFG, ...window.FB_CONFIG };
+    saveCfg(CFG);
+  }
+  boot();
+};
+
+// Fallback: si Firebase no está disponible (desarrollo local sin config), arrancar directo
+if (typeof firebase === 'undefined') {
+  boot();
+}
