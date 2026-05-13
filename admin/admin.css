@@ -1,0 +1,235 @@
+/* =========================================================================
+   admin.css — Dashboard administrativo de Gana con MASECA
+   ========================================================================= */
+
+:root {
+  --green:      #00843D;
+  --green-d:    #006c33;
+  --yellow:     #FFD200;
+  --bg:         #f4f6f4;
+  --card:       #ffffff;
+  --text:       #1b1f1d;
+  --muted:      #6a6f6b;
+  --border:     #e4e8e4;
+  --win-color:  #00843D;
+  --lose-color: #888;
+  --red:        #c0392b;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+/* ── LOGIN ──────────────────────────────────────────────────────────── */
+.a-login-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: linear-gradient(160deg, var(--green) 0%, var(--green-d) 100%);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.a-login-box {
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.3);
+  padding: 36px 32px; width: min(100%, 380px); text-align: center;
+}
+.a-login-logo { width: 72px; height: auto; margin-bottom: 14px; }
+.a-login-box h1 {
+  margin: 0 0 6px; font-size: 1.45rem; font-weight: 900; color: var(--green);
+}
+.a-login-sub { margin: 0 0 22px; color: var(--muted); font-size: .9rem; }
+.a-login-form { display: flex; flex-direction: column; gap: 10px; }
+.a-input {
+  width: 100%; padding: 11px 13px; border: 1.5px solid var(--border);
+  border-radius: 9px; font-size: .95rem; outline: none;
+  transition: border-color .2s;
+}
+.a-input:focus { border-color: var(--green); }
+.a-msg {
+  min-height: 16px; font-size: .85rem; font-weight: 700;
+  color: var(--red); text-align: center;
+}
+.a-btn {
+  padding: 12px 18px; background: var(--green); color: #fff;
+  font-weight: 800; font-size: .95rem; border: 0; border-radius: 10px;
+  cursor: pointer; transition: background .2s;
+}
+.a-btn:hover:not(:disabled) { background: var(--green-d); }
+.a-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+/* ── LAYOUT PRINCIPAL ───────────────────────────────────────────────── */
+.a-app { display: flex; flex-direction: column; min-height: 100vh; }
+
+.a-header {
+  background: var(--green); color: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 24px; gap: 16px; flex-wrap: wrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+}
+.a-header-left { display: flex; align-items: center; gap: 14px; }
+.a-header-logo { width: 42px; height: auto; }
+.a-header-title { margin: 0; font-size: 1.15rem; font-weight: 900; }
+.a-header-sub   { margin: 2px 0 0; font-size: .8rem; opacity: .8; }
+.a-header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.a-admin-email  { font-size: .82rem; opacity: .85; }
+.a-btn-sm {
+  padding: 7px 13px; background: rgba(255,255,255,.18);
+  color: #fff; border: 1px solid rgba(255,255,255,.35);
+  border-radius: 8px; font-weight: 700; font-size: .82rem;
+  cursor: pointer; transition: background .15s;
+}
+.a-btn-sm:hover { background: rgba(255,255,255,.30); }
+
+.a-main {
+  flex: 1; padding: 24px;
+  max-width: 1200px; width: 100%; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 24px;
+}
+
+.a-section {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px 22px;
+}
+.a-section-title {
+  margin: 0 0 16px; font-size: 1rem; font-weight: 800; color: var(--text);
+}
+
+/* ── KPIs ───────────────────────────────────────────────────────────── */
+.a-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+}
+.a-kpi {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 12px; padding: 18px 16px; text-align: center;
+}
+.a-kpi-win { border-color: #b7dfc7; background: #f0faf4; }
+.a-kpi-value {
+  display: block; font-size: 2rem; font-weight: 900;
+  color: var(--green); line-height: 1;
+}
+.a-kpi-win .a-kpi-value { color: var(--green); }
+.a-kpi-label {
+  display: block; font-size: .8rem; color: var(--muted);
+  margin-top: 6px; font-weight: 600;
+}
+
+/* ── GRÁFICA DE HORAS (CSS bars) ────────────────────────────────────── */
+.a-chart-wrap { overflow-x: auto; }
+.a-bar-chart {
+  display: flex; align-items: flex-end; gap: 3px;
+  height: 140px; min-width: 600px; padding: 0 4px;
+}
+.a-bar-col {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 3px; height: 100%; justify-content: flex-end;
+}
+.a-bar-val {
+  font-size: 10px; color: var(--muted); font-weight: 600;
+  min-height: 14px; line-height: 14px;
+}
+.a-bar {
+  width: 100%; background: #b7dfc7; border-radius: 3px 3px 0 0;
+  min-height: 0; transition: height .3s ease;
+}
+.a-bar-peak { background: var(--green); }
+.a-bar-label {
+  font-size: 9px; color: var(--muted); text-align: center;
+  white-space: nowrap; margin-top: 4px;
+}
+
+/* ── RANKING ────────────────────────────────────────────────────────── */
+.a-ranking { display: flex; flex-direction: column; gap: 8px; }
+.a-rank-row {
+  display: grid;
+  grid-template-columns: 28px 160px 1fr 80px 50px;
+  align-items: center; gap: 10px;
+}
+.a-rank-pos   { font-weight: 900; color: var(--muted); font-size: .85rem; text-align: center; }
+.a-rank-name  { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.a-rank-bar-wrap {
+  background: #eef1ee; border-radius: 4px; height: 10px; overflow: hidden;
+}
+.a-rank-bar {
+  height: 100%; background: var(--green); border-radius: 4px;
+  transition: width .4s ease;
+}
+.a-rank-spins { font-size: .82rem; color: var(--muted); text-align: right; }
+.a-rank-wins  { font-size: .82rem; text-align: right; }
+
+/* ── TABLA ──────────────────────────────────────────────────────────── */
+.a-table-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px; margin-bottom: 14px;
+}
+.a-table-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.a-filter-input, .a-filter-select {
+  padding: 7px 10px; border: 1px solid var(--border);
+  border-radius: 8px; font-size: .85rem; outline: none;
+}
+.a-filter-input { width: 180px; }
+.a-filter-input:focus, .a-filter-select:focus { border-color: var(--green); }
+.a-btn-outline {
+  padding: 7px 13px; background: transparent; color: var(--green);
+  border: 1.5px solid var(--green); border-radius: 8px;
+  font-weight: 700; font-size: .82rem; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.a-btn-outline:hover { background: var(--green); color: #fff; }
+
+.a-table-wrap { overflow-x: auto; }
+.a-table {
+  width: 100%; border-collapse: collapse; font-size: .88rem;
+}
+.a-table th {
+  text-align: left; padding: 9px 12px;
+  background: var(--bg); border-bottom: 2px solid var(--border);
+  font-weight: 800; white-space: nowrap; color: var(--text);
+}
+.a-table td {
+  padding: 8px 12px; border-bottom: 1px solid #f0f3f0;
+  white-space: nowrap;
+}
+.a-table tr:hover td { background: #f8faf8; }
+.a-row-win td:first-child { border-left: 3px solid var(--green); }
+.a-winner { color: var(--win-color); font-weight: 800; }
+.a-loser  { color: var(--lose-color); }
+.a-empty {
+  text-align: center; color: var(--muted);
+  padding: 20px 0; font-size: .9rem;
+}
+
+/* ── CONFIG FORM ────────────────────────────────────────────────────── */
+.a-cfg-form { max-width: 500px; }
+.a-cfg-grid { display: grid; gap: 14px; margin-bottom: 14px; }
+.a-cfg-row label {
+  display: block; font-weight: 700; margin-bottom: 5px; font-size: .88rem;
+}
+.a-input-sm {
+  width: 100%; padding: 9px 12px; border: 1.5px solid var(--border);
+  border-radius: 8px; font-size: .95rem; outline: none;
+  transition: border-color .2s;
+}
+.a-input-sm:focus { border-color: var(--green); }
+.a-cfg-note {
+  margin: 0 0 14px; font-size: .85rem; color: var(--muted); line-height: 1.5;
+}
+.a-cfg-msg {
+  margin-left: 12px; font-size: .88rem; font-weight: 700;
+}
+.a-cfg-ok  { color: var(--green); }
+.a-cfg-err { color: var(--red); }
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .a-main { padding: 14px; gap: 16px; }
+  .a-rank-row {
+    grid-template-columns: 24px 1fr 60px 40px;
+  }
+  .a-rank-bar-wrap { display: none; }
+  .a-filter-input { width: 130px; }
+}
