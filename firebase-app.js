@@ -148,6 +148,42 @@ const historyList     = document.getElementById('historyList');
 const historyBtn      = document.getElementById('historyBtn');
 const closeHistoryBtn = document.getElementById('closeHistoryBtn');
 
+// Formulario alternativo de admin
+const toggleAdminLogin  = document.getElementById('toggleAdminLogin');
+const toggleStoreLogin  = document.getElementById('toggleStoreLogin');
+const adminLoginForm    = document.getElementById('adminLoginForm');
+const storeLoginSection = document.querySelector('.login-form');  // primer .login-form
+const adminEmailInput   = document.getElementById('adminEmail');
+const adminPwdInput     = document.getElementById('adminPwd');
+const adminLoginBtn     = document.getElementById('adminLoginBtn');
+const adminMsg          = document.getElementById('adminMsg');
+
+toggleAdminLogin && toggleAdminLogin.addEventListener('click', () => {
+  storeLoginSection.style.display = 'none';
+  adminLoginForm.style.display    = 'flex';
+  adminEmailInput && adminEmailInput.focus();
+});
+toggleStoreLogin && toggleStoreLogin.addEventListener('click', () => {
+  adminLoginForm.style.display    = 'none';
+  storeLoginSection.style.display = 'flex';
+});
+
+function _doAdminLogin() {
+  const email = (adminEmailInput?.value || '').trim();
+  const pwd   = (adminPwdInput?.value   || '').trim();
+  if (!email || !pwd) { if (adminMsg) adminMsg.textContent = 'Ingresa email y contraseña.'; return; }
+  adminLoginBtn.disabled    = true;
+  adminLoginBtn.textContent = 'Entrando…';
+  if (adminMsg) adminMsg.textContent = '';
+  auth.signInWithEmailAndPassword(email, pwd).catch(e => {
+    adminLoginBtn.disabled    = false;
+    adminLoginBtn.textContent = 'Entrar como admin';
+    if (adminMsg) adminMsg.textContent = _authErr(e.code);
+  });
+}
+adminLoginBtn && adminLoginBtn.addEventListener('click', _doAdminLogin);
+adminPwdInput && adminPwdInput.addEventListener('keydown', e => { if (e.key === 'Enter') _doAdminLogin(); });
+
 /* ── Combobox de tiendas ───────────────────────────────────────────────── */
 const storeSearch    = document.getElementById('storeSearch');
 const storeDropdown  = document.getElementById('storeDropdown');
@@ -430,7 +466,6 @@ historyBtn && historyBtn.addEventListener('click', async () => {
   try {
     const snap = await db.collection('spins')
       .where('storeId', '==', _currentUser.uid)
-      .orderBy('timestamp', 'desc')
       .limit(100)
       .get();
 
@@ -442,7 +477,14 @@ historyBtn && historyBtn.addEventListener('click', async () => {
       return;
     }
 
-    snap.docs.forEach(doc => {
+    // Ordenar por timestamp descendente en el cliente (evita índice compuesto en Firestore)
+    const docs = snap.docs.slice().sort((a, b) => {
+      const ta = a.data().timestamp ? a.data().timestamp.toMillis() : 0;
+      const tb = b.data().timestamp ? b.data().timestamp.toMillis() : 0;
+      return tb - ta;
+    });
+
+    docs.forEach(doc => {
       const d  = doc.data();
       const ts = d.timestamp ? d.timestamp.toDate() : null;
       const fecha = ts ? ts.toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' }) : '—';
