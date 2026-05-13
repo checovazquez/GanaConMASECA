@@ -152,8 +152,7 @@ const closeHistoryBtn = document.getElementById('closeHistoryBtn');
 const toggleAdminLogin  = document.getElementById('toggleAdminLogin');
 const toggleStoreLogin  = document.getElementById('toggleStoreLogin');
 const adminLoginForm    = document.getElementById('adminLoginForm');
-const storeLoginSection = document.querySelector('.login-form');  // primer .login-form
-const adminEmailInput   = document.getElementById('adminEmail');
+const storeLoginSection = document.querySelector('.login-form');
 const adminPwdInput     = document.getElementById('adminPwd');
 const adminLoginBtn     = document.getElementById('adminLoginBtn');
 const adminMsg          = document.getElementById('adminMsg');
@@ -161,7 +160,7 @@ const adminMsg          = document.getElementById('adminMsg');
 toggleAdminLogin && toggleAdminLogin.addEventListener('click', () => {
   storeLoginSection.style.display = 'none';
   adminLoginForm.style.display    = 'flex';
-  adminEmailInput && adminEmailInput.focus();
+  adminPwdInput && adminPwdInput.focus();
 });
 toggleStoreLogin && toggleStoreLogin.addEventListener('click', () => {
   adminLoginForm.style.display    = 'none';
@@ -169,13 +168,12 @@ toggleStoreLogin && toggleStoreLogin.addEventListener('click', () => {
 });
 
 function _doAdminLogin() {
-  const email = (adminEmailInput?.value || '').trim();
-  const pwd   = (adminPwdInput?.value   || '').trim();
-  if (!email || !pwd) { if (adminMsg) adminMsg.textContent = 'Ingresa email y contraseña.'; return; }
+  const pwd = (adminPwdInput?.value || '').trim();
+  if (!pwd) { if (adminMsg) adminMsg.textContent = 'Ingresa tu contraseña.'; return; }
   adminLoginBtn.disabled    = true;
   adminLoginBtn.textContent = 'Entrando…';
   if (adminMsg) adminMsg.textContent = '';
-  auth.signInWithEmailAndPassword(email, pwd).catch(e => {
+  auth.signInWithEmailAndPassword(ADMIN_EMAIL, pwd).catch(e => {
     adminLoginBtn.disabled    = false;
     adminLoginBtn.textContent = 'Entrar como admin';
     if (adminMsg) adminMsg.textContent = _authErr(e.code);
