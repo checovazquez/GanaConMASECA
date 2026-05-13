@@ -64,6 +64,36 @@
         <p id="loginMsg" class="login-msg" aria-live="polite"></p>
 
         <button id="loginBtn" class="login-btn" type="button">Entrar</button>
+
+        <p class="login-admin-link">
+          ¿Eres administrador?
+          <button id="toggleAdminLogin" class="login-link-btn" type="button">Entrar con email</button>
+        </p>
+      </div>
+
+      <!-- Modo admin: email directo (oculto por defecto) -->
+      <div id="adminLoginForm" class="login-form" style="display:none">
+        <label class="login-label">Email de administrador</label>
+        <input
+          id="adminEmail"
+          type="email"
+          class="login-input"
+          placeholder="sergiovazquezdezamacona@gmail.com"
+          autocomplete="username"
+        />
+        <label for="adminPwd" class="login-label">Contraseña</label>
+        <input
+          id="adminPwd"
+          type="password"
+          class="login-input"
+          placeholder="••••"
+          autocomplete="current-password"
+        />
+        <p id="adminMsg" class="login-msg" aria-live="polite"></p>
+        <button id="adminLoginBtn" class="login-btn" type="button">Entrar como admin</button>
+        <p class="login-admin-link">
+          <button id="toggleStoreLogin" class="login-link-btn" type="button">← Volver a tiendas</button>
+        </p>
       </div>
     </div>
   </div>
