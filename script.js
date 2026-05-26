@@ -660,8 +660,11 @@ function fillSettingsForm(){
   if (cfgWinProbX)     cfgWinProbX.value     = String(CFG.winProbX);
 }
 function readSettingsForm(){
-  const winnersTotal = Math.max(0, parseInt((cfgWinnersTotal && cfgWinnersTotal.value) || '0', 10));
-  const winProbX     = Math.max(1, parseInt((cfgWinProbX     && cfgWinProbX.value)     || '1', 10));
+  const wt = parseInt((cfgWinnersTotal && cfgWinnersTotal.value) || '0', 10);
+  const wx = parseInt((cfgWinProbX     && cfgWinProbX.value)     || '1', 10);
+  if (isNaN(wt) || isNaN(wx)) return null;
+  const winnersTotal = Math.max(0, wt);
+  const winProbX     = Math.max(1, wx);
   return { winnersTotal, winProbX };
 }
 function updateStatsUI(){
@@ -672,7 +675,9 @@ function updateStatsUI(){
 }
 configForm && configForm.addEventListener('submit', (e) => {
   e.preventDefault();
-  CFG = { ...CFG, ...readSettingsForm() };
+  const parsed = readSettingsForm();
+  if (!parsed) { alert('Valores inválidos. Ingresa números enteros.'); return; }
+  CFG = { ...CFG, ...parsed };
   saveCfg(CFG);
   // Sincronizar config a Firestore si el usuario es admin
   if (typeof window.fbSaveConfig === 'function') {

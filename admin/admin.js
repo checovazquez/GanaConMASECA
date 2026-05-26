@@ -112,9 +112,12 @@ async function loadDashboard() {
   }
 }
 
+const SPINS_LIMIT = 2000;
+
 async function loadSpins() {
   const snap = await db.collection('spins')
     .orderBy('timestamp', 'desc')
+    .limit(SPINS_LIMIT)
     .get();
 
   allSpins = snap.docs.map(doc => {
@@ -174,7 +177,7 @@ function renderHourChart() {
   chartHours.innerHTML = counts.map((cnt, h) => {
     const pct    = Math.round((cnt / max) * 100);
     const label  = `${String(h).padStart(2, '0')}h`;
-    const isBusy = cnt === Math.max(...counts) && cnt > 0;
+    const isBusy = cnt === max && cnt > 0;
     return `
       <div class="a-bar-col">
         <span class="a-bar-val">${cnt > 0 ? cnt : ''}</span>
