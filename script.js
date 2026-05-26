@@ -656,7 +656,7 @@ async function _startCamera() {
     _scanner = new Html5Qrcode('scannerViewport');
     await _scanner.start(
       { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 220, height: 100 } },
+      { fps: 15 },
       _handleBarcode,
       () => {}
     );
@@ -667,7 +667,7 @@ async function _startCamera() {
       _scanner = new Html5Qrcode('scannerViewport');
       await _scanner.start(
         { facingMode: 'user' },
-        { fps: 10, qrbox: { width: 220, height: 100 } },
+        { fps: 15 },
         _handleBarcode,
         () => {}
       );
