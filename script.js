@@ -606,8 +606,18 @@ btnOk && btnOk.addEventListener('click', () => {
 });
 
 /* ---------- Scanner de tickets ---------- */
-let _scanner        = null;
+/*
+ * Estrategia dual:
+ *   1. BarcodeDetector (nativo, Chrome/Android) — rápido, sin librería JS
+ *   2. html5-qrcode (fallback Safari/Firefox)   — lento pero universal
+ *
+ * Siempre limpiamos el viewport antes de iniciar para evitar el bug
+ * de "segundo scan no funciona" causado por el DOM sucio de la sesión anterior.
+ */
 let _scannerRunning = false;
+let _videoStream    = null;
+let _rafHandle      = null;
+let _html5Scanner   = null;
 
 function updateScanUI() {
   if (!btnScan || !btnSpin) return;
@@ -652,27 +662,69 @@ async function _startCamera() {
   if (_scannerRunning) return;
   const vp = document.getElementById('scannerViewport');
   if (!vp) return;
+  vp.innerHTML = '';  // limpia estado previo para que el segundo scan funcione
+
+  if ('BarcodeDetector' in window) {
+    await _startNativeScanner(vp);
+  } else {
+    await _startHtml5Scanner();
+  }
+}
+
+async function _startNativeScanner(vp) {
   try {
-    _scanner = new Html5Qrcode('scannerViewport');
-    await _scanner.start(
-      { facingMode: 'environment' },
-      { fps: 15 },
-      _handleBarcode,
-      () => {}
-    );
+    const video = document.createElement('video');
+    video.autoplay = true; video.muted = true; video.playsInline = true;
+    video.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    vp.appendChild(video);
+
+    _videoStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } }
+    });
+    video.srcObject = _videoStream;
+    await video.play();
     _scannerRunning = true;
-  } catch (err) {
-    // Fallback: intentar sin preferencia de cámara trasera (desktop/webcam)
+
+    const allFormats  = await BarcodeDetector.getSupportedFormats();
+    const wantFormats = ['code_128','ean_13','ean_8','qr_code','upc_a','upc_e','code_39','code_93','itf','codabar'];
+    const formats     = wantFormats.filter(f => allFormats.includes(f));
+    const detector    = new BarcodeDetector({ formats: formats.length ? formats : ['qr_code'] });
+
+    _nativeScanLoop(video, detector);
+  } catch(e) {
+    _setScanMsg('No se pudo acceder a la cámara. Verifica los permisos.', 'error');
+    if (scannerActions) scannerActions.style.display = 'block';
+  }
+}
+
+function _nativeScanLoop(video, detector) {
+  if (!_scannerRunning) return;
+  detector.detect(video)
+    .then(barcodes => {
+      if (!_scannerRunning) return;
+      if (barcodes.length > 0) {
+        _handleBarcode(barcodes[0].rawValue);
+      } else {
+        _rafHandle = requestAnimationFrame(() => _nativeScanLoop(video, detector));
+      }
+    })
+    .catch(() => {
+      if (_scannerRunning) _rafHandle = requestAnimationFrame(() => _nativeScanLoop(video, detector));
+    });
+}
+
+async function _startHtml5Scanner() {
+  const tryStart = async (facingMode) => {
+    _html5Scanner = new Html5Qrcode('scannerViewport');
+    await _html5Scanner.start({ facingMode }, { fps: 15 }, _handleBarcode, () => {});
+    _scannerRunning = true;
+  };
+  try {
+    await tryStart('environment');
+  } catch(e) {
     try {
-      _scanner = new Html5Qrcode('scannerViewport');
-      await _scanner.start(
-        { facingMode: 'user' },
-        { fps: 15 },
-        _handleBarcode,
-        () => {}
-      );
-      _scannerRunning = true;
-    } catch (err2) {
+      await tryStart('user');
+    } catch(e2) {
       _setScanMsg('No se pudo acceder a la cámara. Verifica los permisos.', 'error');
       if (scannerActions) scannerActions.style.display = 'block';
     }
@@ -680,11 +732,13 @@ async function _startCamera() {
 }
 
 async function _stopCamera() {
-  if (_scanner && _scannerRunning) {
-    _scannerRunning = false;
-    try { await _scanner.stop(); } catch(e) {}
-    try { _scanner.clear(); }     catch(e) {}
-    _scanner = null;
+  _scannerRunning = false;
+  if (_rafHandle)    { cancelAnimationFrame(_rafHandle); _rafHandle = null; }
+  if (_videoStream)  { _videoStream.getTracks().forEach(t => t.stop()); _videoStream = null; }
+  if (_html5Scanner) {
+    try { await _html5Scanner.stop(); } catch(e) {}
+    try { _html5Scanner.clear(); }     catch(e) {}
+    _html5Scanner = null;
   }
 }
 
