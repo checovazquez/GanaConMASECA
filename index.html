@@ -8,6 +8,7 @@
   <link rel="shortcut icon" type="image/png" href="/images/favicon.png" />
 </head>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <!-- Firebase SDK (compat v10) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -146,7 +147,8 @@
     <!-- Controles -->
     <section class="controls">
       <div class="row">
-        <button id="btnSpin">Girar</button>
+        <button id="btnScan" class="btn-scan">📷 Escanear Ticket</button>
+        <button id="btnSpin" style="display:none">Girar</button>
         <div id="pillSpins" class="pill">Participaciones: 0 / ∞</div>
       </div>
       <p id="status" class="status">Listo para girar.</p>
@@ -164,6 +166,22 @@
 
   <!-- ⚙️ Botón flotante de configuración (solo visible para admin) -->
   <button id="btnConfig" class="fab-config" aria-label="Configuración" style="display:none">⚙️</button>
+
+  <!-- Modal scanner de tickets -->
+  <div id="scannerOverlay" class="overlay overlay-scanner" style="display:none" role="dialog" aria-modal="true" aria-label="Escanear ticket">
+    <div class="scanner-dialog">
+      <div class="scanner-header">
+        <h3>Escanear Ticket</h3>
+        <button id="btnScanClose" class="icon-btn" type="button" aria-label="Cerrar">✕</button>
+      </div>
+      <p class="scanner-hint">Apunta la cámara trasera al código de barras del ticket</p>
+      <div id="scannerViewport" class="scanner-viewport"></div>
+      <p id="scannerMsg" class="scanner-msg" aria-live="polite"></p>
+      <div id="scannerActions" class="scanner-retry" style="display:none">
+        <button id="btnRescan" class="btn-secondary" type="button">Volver a escanear</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal PIN de administrador -->
   <div id="pinOverlay" class="overlay overlay-pin" aria-modal="true" role="dialog" style="display:none">

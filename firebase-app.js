@@ -514,6 +514,23 @@ closeHistoryBtn && closeHistoryBtn.addEventListener('click', () => {
 window.fbIsAdmin      = () => _currentUser?.email === ADMIN_EMAIL;
 window.fbCurrentUser  = () => _currentUser;
 
+/* ── Validación y registro de tickets ───────────────────────────────────── */
+
+window.fbValidateTicket = async function(code) {
+  const doc = await db.collection('usedTickets').doc(code).get();
+  return !doc.exists;   // true = válido (no usado), false = duplicado
+};
+
+window.fbMarkTicketUsed = async function(code) {
+  if (!_currentUser) throw new Error('No autenticado');
+  await db.collection('usedTickets').doc(code).set({
+    code,
+    storeId:    _currentUser.uid,
+    storeEmail: _currentUser.email,
+    timestamp:  firebase.firestore.FieldValue.serverTimestamp()
+  });
+};
+
 /*
  * REFERENCIA — Emails para crear en Firebase Auth (Console → Authentication → Users)
  * Total: 98 tiendas + 1 admin = 99 cuentas

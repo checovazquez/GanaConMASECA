@@ -60,5 +60,17 @@ service cloud.firestore {
       allow read:  if isSignedIn();
       allow write: if isAdmin();
     }
+
+    // ── Colección: usedTickets ────────────────────────────────
+    // Cualquier tienda autenticada puede leer (para validar duplicados)
+    // y crear (al registrar un ticket). El ID del documento ES el código.
+    // Solo el admin puede borrar o modificar.
+    match /usedTickets/{ticketCode} {
+      allow read:   if isSignedIn();
+      allow create: if isSignedIn() &&
+        ticketCode == request.resource.data.code &&
+        request.resource.data.keys().hasAll(['code', 'storeId', 'storeEmail', 'timestamp']);
+      allow update, delete: if isAdmin();
+    }
   }
 }
