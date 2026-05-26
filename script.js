@@ -614,10 +614,13 @@ btnOk && btnOk.addEventListener('click', () => {
  * Siempre limpiamos el viewport antes de iniciar para evitar el bug
  * de "segundo scan no funciona" causado por el DOM sucio de la sesión anterior.
  */
-let _scannerRunning = false;
-let _videoStream    = null;
-let _rafHandle      = null;
-let _html5Scanner   = null;
+let _scannerRunning    = false;
+let _videoStream       = null;
+let _rafHandle         = null;
+let _html5Scanner      = null;
+let _lastDetectedCode  = null;
+let _detectedCount     = 0;
+const SCAN_CONFIRM     = 3;   // lecturas idénticas consecutivas antes de aceptar
 
 function updateScanUI() {
   if (!btnScan || !btnSpin) return;
@@ -656,6 +659,8 @@ async function closeScanner() {
 function _resetScannerUI() {
   if (scannerMsg)     { scannerMsg.textContent = ''; scannerMsg.className = 'scanner-msg'; }
   if (scannerActions) { scannerActions.style.display = 'none'; }
+  _lastDetectedCode = null;
+  _detectedCount    = 0;
 }
 
 async function _startCamera() {
@@ -699,18 +704,34 @@ async function _startNativeScanner(vp) {
 
 function _nativeScanLoop(video, detector) {
   if (!_scannerRunning) return;
-  detector.detect(video)
-    .then(barcodes => {
-      if (!_scannerRunning) return;
-      if (barcodes.length > 0) {
-        _handleBarcode(barcodes[0].rawValue);
-      } else {
-        _rafHandle = requestAnimationFrame(() => _nativeScanLoop(video, detector));
-      }
-    })
-    .catch(() => {
-      if (_scannerRunning) _rafHandle = requestAnimationFrame(() => _nativeScanLoop(video, detector));
-    });
+  // Throttle a ~10fps para estabilizar lecturas de Code-39
+  _rafHandle = setTimeout(() => {
+    if (!_scannerRunning) return;
+    detector.detect(video)
+      .then(barcodes => {
+        if (!_scannerRunning) return;
+        if (barcodes.length > 0) {
+          const code = barcodes[0].rawValue.trim();
+          if (code === _lastDetectedCode) {
+            _detectedCount++;
+            if (_detectedCount >= SCAN_CONFIRM) {
+              _handleBarcode(code);
+              return;   // no programar siguiente ciclo
+            }
+          } else {
+            _lastDetectedCode = code;
+            _detectedCount    = 1;
+          }
+        } else {
+          _lastDetectedCode = null;
+          _detectedCount    = 0;
+        }
+        _nativeScanLoop(video, detector);
+      })
+      .catch(() => {
+        if (_scannerRunning) _nativeScanLoop(video, detector);
+      });
+  }, 100);
 }
 
 async function _startHtml5Scanner() {
@@ -732,9 +753,11 @@ async function _startHtml5Scanner() {
 }
 
 async function _stopCamera() {
-  _scannerRunning = false;
-  if (_rafHandle)    { cancelAnimationFrame(_rafHandle); _rafHandle = null; }
-  if (_videoStream)  { _videoStream.getTracks().forEach(t => t.stop()); _videoStream = null; }
+  _scannerRunning   = false;
+  _lastDetectedCode = null;
+  _detectedCount    = 0;
+  if (_rafHandle)   { clearTimeout(_rafHandle); cancelAnimationFrame(_rafHandle); _rafHandle = null; }
+  if (_videoStream) { _videoStream.getTracks().forEach(t => t.stop()); _videoStream = null; }
   if (_html5Scanner) {
     try { await _html5Scanner.stop(); } catch(e) {}
     try { _html5Scanner.clear(); }     catch(e) {}
