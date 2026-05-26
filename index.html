@@ -8,7 +8,109 @@
   <link rel="shortcut icon" type="image/png" href="/images/favicon.png" />
 </head>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<!-- Firebase SDK (compat v10) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+
 <body>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PANTALLA DE LOGIN — visible al inicio, se oculta tras auth
+       ══════════════════════════════════════════════════════════════ -->
+  <div id="loginOverlay" class="login-overlay" role="dialog" aria-modal="true" aria-label="Inicio de sesión">
+    <div class="login-box">
+      <img
+        src="https://www.maseca.com.mx/media/1911/logo_maseca-2x.png"
+        alt="Logo MASECA"
+        class="login-logo"
+      />
+      <h1 class="login-title">Gana con MASECA</h1>
+      <p class="login-sub">Ingresa con tu cuenta de tienda</p>
+
+      <div class="login-form">
+        <label class="login-label">Tienda</label>
+        <div class="combo-wrap" id="storeComboWrap">
+          <input
+            id="storeSearch"
+            type="text"
+            class="login-input combo-input"
+            placeholder="Busca o selecciona tu tienda…"
+            autocomplete="off"
+            role="combobox"
+            aria-expanded="false"
+            aria-haspopup="listbox"
+            aria-label="Seleccionar tienda"
+          />
+          <span class="combo-arrow" aria-hidden="true">▾</span>
+          <ul id="storeDropdown" class="combo-list" role="listbox" aria-label="Lista de tiendas"></ul>
+        </div>
+        <!-- Email auto-llenado por el combobox; oculto al usuario -->
+        <input id="loginEmail" type="hidden" />
+
+        <label for="loginPassword" class="login-label">Contraseña</label>
+        <input
+          id="loginPassword"
+          type="password"
+          class="login-input"
+          placeholder="••••"
+          autocomplete="current-password"
+          inputmode="numeric"
+          maxlength="20"
+        />
+
+        <p id="loginMsg" class="login-msg" aria-live="polite"></p>
+
+        <button id="loginBtn" class="login-btn" type="button">Entrar</button>
+
+        <p class="login-admin-link">
+          ¿Eres administrador?
+          <button id="toggleAdminLogin" class="login-link-btn" type="button">Entrar con email</button>
+        </p>
+      </div>
+
+      <!-- Modo admin: solo contraseña (email fijo en código) -->
+      <div id="adminLoginForm" class="login-form" style="display:none">
+        <p class="login-sub" style="margin-bottom:6px">Administrador</p>
+        <label for="adminPwd" class="login-label">Contraseña</label>
+        <input
+          id="adminPwd"
+          type="password"
+          class="login-input"
+          placeholder="••••"
+          autocomplete="current-password"
+        />
+        <p id="adminMsg" class="login-msg" aria-live="polite"></p>
+        <button id="adminLoginBtn" class="login-btn" type="button">Entrar como admin</button>
+        <p class="login-admin-link">
+          <button id="toggleStoreLogin" class="login-link-btn" type="button">← Volver a tiendas</button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       BARRA DE USUARIO — visible una vez autenticado
+       ══════════════════════════════════════════════════════════════ -->
+  <div id="userBar" class="user-bar" style="display:none" role="banner">
+    <span class="user-bar-name" aria-label="Tienda activa">
+      🏪 <span id="userBarName">Tienda</span>
+    </span>
+    <div class="user-bar-actions">
+      <button id="historyBtn" class="user-bar-btn" type="button" aria-label="Ver mi historial">
+        📋 Mi historial
+      </button>
+      <button id="logoutBtn" class="user-bar-btn user-bar-logout" type="button" aria-label="Cerrar sesión">
+        Salir
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       APP PRINCIPAL
+       ══════════════════════════════════════════════════════════════ -->
   <main class="wrap">
     <!-- Encabezado -->
     <header class="header">
@@ -60,8 +162,8 @@
     </div>
   </div>
 
-  <!-- ⚙️ Botón flotante de configuración -->
-  <button id="btnConfig" class="fab-config" aria-label="Configuración">⚙️</button>
+  <!-- ⚙️ Botón flotante de configuración (solo visible para admin) -->
+  <button id="btnConfig" class="fab-config" aria-label="Configuración" style="display:none">⚙️</button>
 
   <!-- Modal PIN de administrador -->
   <div id="pinOverlay" class="overlay overlay-pin" aria-modal="true" role="dialog" style="display:none">
@@ -94,11 +196,10 @@
 
     <!-- PANE: Ajustes -->
     <section id="paneSettings" class="cfg-pane show" role="tabpanel" aria-labelledby="tabSettings">
-      <!-- FIX: configForm ya NO envuelve al pinForm (formularios anidados son inválidos en HTML) -->
       <form id="configForm" class="config-form" autocomplete="off">
         <div class="cfg-grid">
           <div class="cfg-row">
-            <label for="cfgWinnersTotal">Número de ganadores (stock)</label>
+            <label for="cfgWinnersTotal">Número de ganadores (stock por tienda)</label>
             <input type="number" id="cfgWinnersTotal" min="0" step="1" />
           </div>
           <div class="cfg-row">
@@ -124,7 +225,6 @@
 
       <div class="cfg-sep"></div>
 
-      <!-- Bloque: administrador (cambio de PIN) — formulario separado, NO anidado -->
       <h3 class="cfg-subtitle">Administrador</h3>
       <form id="pinForm" class="config-form" autocomplete="off">
         <div class="cfg-grid">
@@ -148,7 +248,7 @@
         </div>
       </form>
 
-      <!-- 🌍 MUNDIAL: toggle de tema (fácil de remover después del mundial) -->
+      <!-- 🌍 MUNDIAL: toggle de tema -->
       <div class="cfg-sep"></div>
       <h3 class="cfg-subtitle">Tema especial</h3>
       <div class="cfg-row mundial-toggle-row">
@@ -160,8 +260,12 @@
           <span class="toggle-slider"></span>
         </label>
       </div>
-      <!-- FIN MUNDIAL -->
 
+      <!-- Enlace al dashboard de admin -->
+      <div class="cfg-sep"></div>
+      <div class="cfg-footer">
+        <a href="admin/" class="admin-link-btn" target="_blank">📊 Dashboard de Administrador</a>
+      </div>
       <div class="cfg-footer">
         <button id="btnCfgCloseBottom" type="button">Cerrar</button>
       </div>
@@ -183,15 +287,26 @@
     </section>
   </div>
 
+  <!-- ══════════════════════════════════════════════════════════════
+       PANEL HISTORIAL DE LA TIENDA (slide desde la derecha)
+       ══════════════════════════════════════════════════════════════ -->
+  <div id="historyPanel" class="history-panel" aria-label="Mi historial">
+    <div class="history-header">
+      <h2>📋 Mi historial</h2>
+      <button id="closeHistoryBtn" class="icon-btn" aria-label="Cerrar historial">✕</button>
+    </div>
+    <ul id="historyList" class="history-list"></ul>
+  </div>
+
+  <script src="firebase-app.js"></script>
   <script src="script.js"></script>
 
-  <!-- 🌍 MUNDIAL: script inline del toggle (fácil de identificar y borrar) -->
+  <!-- 🌍 MUNDIAL: script del toggle -->
   <script>
     (function(){
       const MUNDIAL_KEY = 'maseca_mundial_theme';
       const toggle = document.getElementById('toggleMundial');
       if (!toggle) return;
-      // Restaurar preferencia guardada
       const saved = localStorage.getItem(MUNDIAL_KEY) === '1';
       toggle.checked = saved;
       document.body.classList.toggle('mundial-theme', saved);
@@ -202,6 +317,5 @@
       });
     })();
   </script>
-  <!-- FIN MUNDIAL -->
 </body>
 </html>
