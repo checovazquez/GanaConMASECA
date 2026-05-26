@@ -339,9 +339,12 @@ function _showApp(user) {
   if (loginOverlay) loginOverlay.style.display = 'none';
   if (userBar)      userBar.style.display = 'flex';
 
-  // Mostrar nombre de la tienda (parte antes del @)
+  // Mostrar nombre de la tienda usando el label del catálogo, o fallback al email
   if (userBarName) {
-    userBarName.textContent = user.email.split('@')[0].replace(/tienda/i, 'Tienda ');
+    const store = STORES.find(s => s.email === user.email);
+    userBarName.textContent = store
+      ? store.label
+      : user.email.split('@')[0].replace(/tienda/i, 'Tienda ');
   }
 
   // El botón ⚙️ solo lo ve el administrador
