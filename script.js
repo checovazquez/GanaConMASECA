@@ -14,6 +14,14 @@ const sub        = document.getElementById('resultSub');
 const btnOk      = document.getElementById('btnOk');
 const centerText = document.getElementById('centerText');
 
+/* ---------- Scanner de tickets ---------- */
+const scannerOverlay = document.getElementById('scannerOverlay');
+const scannerMsg     = document.getElementById('scannerMsg');
+const scannerActions = document.getElementById('scannerActions');
+const btnScan        = document.getElementById('btnScan');
+const btnScanClose   = document.getElementById('btnScanClose');
+const btnRescan      = document.getElementById('btnRescan');
+
 /* ---------- Admin: PIN & panel ---------- */
 const btnConfig        = document.getElementById('btnConfig');
 const pinOverlay       = document.getElementById('pinOverlay');
@@ -60,6 +68,7 @@ const btnLogExport  = document.getElementById('btnLogExport');
 /* ---------- Estado ruleta ---------- */
 let rotation = 0;
 let spinning = false;
+let ticketValidated = false;
 const TAU = Math.PI * 2;
 const POINTER_ANGLE = -Math.PI / 2;
 
@@ -156,6 +165,7 @@ function canSpin(){
   if (spinning) return false;
   if (cooldownEndTs && Date.now() < cooldownEndTs) return false;
   if (spins >= totalParticipations()) return false;
+  if (!ticketValidated) return false;
   return true;
 }
 
@@ -587,11 +597,134 @@ btnOk && btnOk.addEventListener('click', () => {
     spins += 1; saveSpins(); updatePill();
     updateStatsUI(); updateLogUI();
     if (spins >= totalParticipations()){
-      btnSpin.disabled = true;
       statusEl.textContent = 'Se alcanzó el límite de participaciones.';
     }
   }
+  ticketValidated = false;
+  updateScanUI();
   startCooldown();
+});
+
+/* ---------- Scanner de tickets ---------- */
+let _scanner        = null;
+let _scannerRunning = false;
+
+function updateScanUI() {
+  if (!btnScan || !btnSpin) return;
+  const total = totalParticipations();
+  if (total > 0 && spins >= total) {
+    btnScan.style.display = 'none';
+    btnSpin.style.display = 'none';
+    return;
+  }
+  if (ticketValidated) {
+    btnScan.style.display = 'none';
+    btnSpin.style.display = '';
+    btnSpin.disabled      = !canSpin();
+    btnSpin.textContent   = 'Girar';
+  } else {
+    btnScan.style.display = '';
+    btnSpin.style.display = 'none';
+    btnSpin.disabled      = true;
+  }
+}
+
+async function openScanner() {
+  if (!scannerOverlay) return;
+  _resetScannerUI();
+  scannerOverlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  await _startCamera();
+}
+
+async function closeScanner() {
+  await _stopCamera();
+  if (scannerOverlay) scannerOverlay.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function _resetScannerUI() {
+  if (scannerMsg)     { scannerMsg.textContent = ''; scannerMsg.className = 'scanner-msg'; }
+  if (scannerActions) { scannerActions.style.display = 'none'; }
+}
+
+async function _startCamera() {
+  if (_scannerRunning) return;
+  const vp = document.getElementById('scannerViewport');
+  if (!vp) return;
+  try {
+    _scanner = new Html5Qrcode('scannerViewport');
+    await _scanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 220, height: 100 } },
+      _handleBarcode,
+      () => {}
+    );
+    _scannerRunning = true;
+  } catch (err) {
+    // Fallback: intentar sin preferencia de cámara trasera (desktop/webcam)
+    try {
+      _scanner = new Html5Qrcode('scannerViewport');
+      await _scanner.start(
+        { facingMode: 'user' },
+        { fps: 10, qrbox: { width: 220, height: 100 } },
+        _handleBarcode,
+        () => {}
+      );
+      _scannerRunning = true;
+    } catch (err2) {
+      _setScanMsg('No se pudo acceder a la cámara. Verifica los permisos.', 'error');
+      if (scannerActions) scannerActions.style.display = 'block';
+    }
+  }
+}
+
+async function _stopCamera() {
+  if (_scanner && _scannerRunning) {
+    _scannerRunning = false;
+    try { await _scanner.stop(); } catch(e) {}
+    try { _scanner.clear(); }     catch(e) {}
+    _scanner = null;
+  }
+}
+
+async function _handleBarcode(code) {
+  if (!_scannerRunning) return;
+  await _stopCamera();
+  _setScanMsg('Validando ticket…', '');
+
+  try {
+    const esValido = await window.fbValidateTicket(code);
+    if (!esValido) {
+      _setScanMsg('⚠ Ticket ya utilizado. Prueba con otro.', 'error');
+      if (scannerActions) scannerActions.style.display = 'block';
+      return;
+    }
+    await window.fbMarkTicketUsed(code);
+    ticketValidated = true;
+    _setScanMsg('✓ Ticket válido', 'ok');
+    setTimeout(async () => {
+      await closeScanner();
+      updateScanUI();
+    }, 1200);
+  } catch(e) {
+    console.error('Error validando ticket:', e);
+    _setScanMsg('Error al validar. Intenta de nuevo.', 'error');
+    if (scannerActions) scannerActions.style.display = 'block';
+  }
+}
+
+function _setScanMsg(text, type) {
+  if (!scannerMsg) return;
+  scannerMsg.textContent = text;
+  scannerMsg.className   = 'scanner-msg' + (type ? ' ' + type : '');
+}
+
+btnScan      && btnScan.addEventListener('click', openScanner);
+btnScanClose && btnScanClose.addEventListener('click', closeScanner);
+btnRescan    && btnRescan.addEventListener('click', async () => {
+  _resetScannerUI();
+  await _startCamera();
 });
 
 /* ---------- PIN modal open/close ---------- */
@@ -630,7 +763,10 @@ btnCloseConfig   && btnCloseConfig.addEventListener('click', closeConfigPanel);
 btnCfgCloseBottom  && btnCfgCloseBottom.addEventListener('click', closeConfigPanel);
 btnCfgCloseBottom2 && btnCfgCloseBottom2.addEventListener('click', closeConfigPanel);
 window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && configPanel.classList.contains('show')) closeConfigPanel();
+  if (e.key === 'Escape') {
+    if (configPanel.classList.contains('show')) closeConfigPanel();
+    if (scannerOverlay && scannerOverlay.style.display !== 'none') closeScanner();
+  }
 });
 function onAdminAuth(){
   fillSettingsForm();
@@ -788,7 +924,7 @@ function boot(){
   updatePill();
   setCenterText('¡SUERTE!', false);
   updateStatsUI();
-  btnSpin.disabled = !canSpin();
+  updateScanUI();
 }
 
 /* ---------- Eventos ---------- */
