@@ -614,13 +614,8 @@ btnOk && btnOk.addEventListener('click', () => {
  * Siempre limpiamos el viewport antes de iniciar para evitar el bug
  * de "segundo scan no funciona" causado por el DOM sucio de la sesión anterior.
  */
-let _scannerRunning    = false;
-let _videoStream       = null;
-let _rafHandle         = null;
-let _html5Scanner      = null;
-let _lastDetectedCode  = null;
-let _detectedCount     = 0;
-const SCAN_CONFIRM     = 3;   // lecturas idénticas consecutivas antes de aceptar
+let _scannerRunning = false;
+let _html5Scanner   = null;
 
 function updateScanUI() {
   if (!btnScan || !btnSpin) return;
@@ -659,82 +654,14 @@ async function closeScanner() {
 function _resetScannerUI() {
   if (scannerMsg)     { scannerMsg.textContent = ''; scannerMsg.className = 'scanner-msg'; }
   if (scannerActions) { scannerActions.style.display = 'none'; }
-  _lastDetectedCode = null;
-  _detectedCount    = 0;
 }
 
 async function _startCamera() {
   if (_scannerRunning) return;
   const vp = document.getElementById('scannerViewport');
   if (!vp) return;
-  vp.innerHTML = '';  // limpia estado previo para que el segundo scan funcione
+  vp.innerHTML = '';  // limpia estado previo — garantiza que el segundo scan funcione
 
-  if ('BarcodeDetector' in window) {
-    await _startNativeScanner(vp);
-  } else {
-    await _startHtml5Scanner();
-  }
-}
-
-async function _startNativeScanner(vp) {
-  try {
-    const video = document.createElement('video');
-    video.autoplay = true; video.muted = true; video.playsInline = true;
-    video.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-    vp.appendChild(video);
-
-    _videoStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' } }
-    });
-    video.srcObject = _videoStream;
-    await video.play();
-    _scannerRunning = true;
-
-    const allFormats  = await BarcodeDetector.getSupportedFormats();
-    const wantFormats = ['code_128','ean_13','ean_8','qr_code','upc_a','upc_e','code_39','code_93','itf','codabar'];
-    const formats     = wantFormats.filter(f => allFormats.includes(f));
-    const detector    = new BarcodeDetector({ formats: formats.length ? formats : ['qr_code'] });
-
-    _nativeScanLoop(video, detector);
-  } catch(e) {
-    _setScanMsg('No se pudo acceder a la cámara. Verifica los permisos.', 'error');
-    if (scannerActions) scannerActions.style.display = 'block';
-  }
-}
-
-function _nativeScanLoop(video, detector) {
-  if (!_scannerRunning) return;
-  // Throttle a ~10fps para estabilizar lecturas de Code-39
-  _rafHandle = setTimeout(() => {
-    if (!_scannerRunning) return;
-    detector.detect(video)
-      .then(barcodes => {
-        if (!_scannerRunning) return;
-        if (barcodes.length > 0) {
-          const code = barcodes[0].rawValue.trim();
-          if (code === _lastDetectedCode) {
-            _detectedCount++;
-            if (_detectedCount >= SCAN_CONFIRM) {
-              _handleBarcode(code);
-              return;   // no programar siguiente ciclo
-            }
-          } else {
-            _lastDetectedCode = code;
-            _detectedCount    = 1;
-          }
-        } else {
-          _lastDetectedCode = null;
-          _detectedCount    = 0;
-        }
-        _nativeScanLoop(video, detector);
-      })
-      .catch(() => {
-        if (_scannerRunning) _nativeScanLoop(video, detector);
-      });
-  }, 100);
-}
-
-async function _startHtml5Scanner() {
   const tryStart = async (facingMode) => {
     _html5Scanner = new Html5Qrcode('scannerViewport');
     await _html5Scanner.start({ facingMode }, { fps: 15 }, _handleBarcode, () => {});
@@ -753,11 +680,7 @@ async function _startHtml5Scanner() {
 }
 
 async function _stopCamera() {
-  _scannerRunning   = false;
-  _lastDetectedCode = null;
-  _detectedCount    = 0;
-  if (_rafHandle)   { clearTimeout(_rafHandle); cancelAnimationFrame(_rafHandle); _rafHandle = null; }
-  if (_videoStream) { _videoStream.getTracks().forEach(t => t.stop()); _videoStream = null; }
+  _scannerRunning = false;
   if (_html5Scanner) {
     try { await _html5Scanner.stop(); } catch(e) {}
     try { _html5Scanner.clear(); }     catch(e) {}
