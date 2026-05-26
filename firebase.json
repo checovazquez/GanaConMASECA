@@ -1,0 +1,22 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      "firestore.rules",
+      "**/.*",
+      "**/node_modules/**",
+      "gana-con-maseca-firebase-adminsdk-fbsvc-6b40cc3088.json",
+      "crear-usuarios.js",
+      "package.json",
+      "package-lock.json",
+      "usuarios_contrasenas_maseca.xlsx",
+      "~$*",
+      "README.md"
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}
