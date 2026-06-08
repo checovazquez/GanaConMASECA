@@ -174,12 +174,28 @@
         <h3>Escanear Ticket</h3>
         <button id="btnScanClose" class="icon-btn" type="button" aria-label="Cerrar">✕</button>
       </div>
-      <p class="scanner-hint">Apunta la cámara trasera al código de barras del ticket</p>
-      <div id="scannerViewport" class="scanner-viewport"></div>
+
+      <!-- Modo cámara -->
+      <div id="scannerCamSection">
+        <p class="scanner-hint">Apunta la cámara al código de barras del ticket</p>
+        <div id="scannerViewport" class="scanner-viewport"></div>
+      </div>
+
+      <!-- Modo manual -->
+      <div id="scannerManualSection" style="display:none">
+        <p class="scanner-hint">Ingresa el número o código del ticket</p>
+        <input id="manualCodeInput" type="text" class="manual-code-input"
+               placeholder="Ej: 123456789" autocomplete="off" autocapitalize="characters" />
+        <button id="btnManualSubmit" class="btn-scan" type="button">Validar →</button>
+      </div>
+
       <p id="scannerMsg" class="scanner-msg" aria-live="polite"></p>
+
       <div id="scannerActions" class="scanner-retry" style="display:none">
         <button id="btnRescan" class="btn-secondary" type="button">Volver a escanear</button>
       </div>
+
+      <button id="btnToggleManual" class="scanner-manual-link" type="button">⌨️ Captura manual</button>
     </div>
   </div>
 

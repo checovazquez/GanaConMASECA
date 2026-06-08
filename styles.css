@@ -909,7 +909,6 @@ body.mundial-theme .status { color: #8899bb; }
   position: relative;
 }
 
-/* Línea de escaneo animada */
 .scanner-viewport::before {
   content: '';
   position: absolute;
@@ -940,6 +939,40 @@ body.mundial-theme .status { color: #8899bb; }
 .scanner-msg.ok    { color: var(--maseca-green); font-size: 1rem; }
 
 .scanner-retry { text-align: center; }
+
+.manual-code-input {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  margin: 8px 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 2px;
+  border: 2px solid #d8ddd8;
+  border-radius: 10px;
+  outline: none;
+  background: #fff;
+  color: var(--text);
+}
+.manual-code-input:focus { border-color: var(--maseca-green); }
+
+.scanner-manual-link {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 6px 0 2px;
+  margin-top: 2px;
+  text-align: center;
+}
+.scanner-manual-link:hover { color: var(--maseca-green); background: none; }
 
 /* Botón escanear — amarillo para diferenciarlo del Girar */
 .btn-scan {
