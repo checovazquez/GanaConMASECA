@@ -682,10 +682,28 @@ body.mundial-theme .status { color: #8899bb; }
 }
 
 .combo-input {
-  padding-right: 36px;  /* espacio para la flecha */
+  padding-right: 60px;  /* espacio para botón ✕ + flecha */
   cursor: pointer;
 }
 .combo-input:focus { cursor: text; }
+
+.combo-clear {
+  display: none;          /* visible solo cuando hay texto */
+  position: absolute;
+  right: 32px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0 4px;
+  font-size: .9rem;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color .15s;
+}
+.combo-clear:hover { color: var(--maseca-green); background: none; }
 
 .combo-arrow {
   position: absolute;
