@@ -39,6 +39,43 @@ const aCfgMsg           = document.getElementById('aCfgMsg');
 let allSpins  = [];
 let adminUser = null;
 
+/* ── Auto-refresh (cada 5 min) ────────────────────────────────────────── */
+const REFRESH_INTERVAL = 5 * 60;   // segundos
+let _refreshTimer    = null;
+let _countdownSecs   = REFRESH_INTERVAL;
+let _lastRefreshTime = null;
+
+const refreshStatus = document.getElementById('refreshStatus');
+
+function _startAutoRefresh() {
+  _stopAutoRefresh();
+  _countdownSecs = REFRESH_INTERVAL;
+  _tickCountdown();
+  _refreshTimer = setInterval(() => {
+    _countdownSecs--;
+    if (_countdownSecs <= 0) {
+      _countdownSecs = REFRESH_INTERVAL;
+      loadDashboard();
+    }
+    _tickCountdown();
+  }, 1000);
+}
+
+function _stopAutoRefresh() {
+  if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
+}
+
+function _tickCountdown() {
+  if (!refreshStatus) return;
+  const mm  = String(Math.floor(_countdownSecs / 60)).padStart(2, '0');
+  const ss  = String(_countdownSecs % 60).padStart(2, '0');
+  const ts  = _lastRefreshTime
+    ? _lastRefreshTime.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+    : '—';
+  refreshStatus.innerHTML =
+    `Última actualización: <strong>${ts}</strong> &nbsp;|&nbsp; próxima en <span class="a-refresh-countdown">${mm}:${ss}</span>`;
+}
+
 /* ── Auth ─────────────────────────────────────────────────────────────── */
 auth.onAuthStateChanged(user => {
   if (user && user.email === ADMIN_EMAIL) {
@@ -47,13 +84,14 @@ auth.onAuthStateChanged(user => {
     adminLogin.style.display = 'none';
     adminApp.style.display   = 'block';
     loadDashboard();
-    // Invalidar tamaño del mapa después de que sea visible
+    _startAutoRefresh();
     setTimeout(() => { if (_map) _map.invalidateSize(); }, 300);
   } else if (user) {
     // Usuario autenticado pero no es admin
     auth.signOut();
     showMsg('Esta página es solo para administradores.');
   } else {
+    _stopAutoRefresh();
     adminLogin.style.display = 'flex';
     adminApp.style.display   = 'none';
   }
@@ -108,6 +146,7 @@ aLogoutBtn && aLogoutBtn.addEventListener('click', () => {
 async function loadDashboard() {
   try {
     await Promise.all([loadSpins(), loadConfig()]);
+    _lastRefreshTime = new Date();
     renderAll();
   } catch(e) {
     console.error('Error cargando dashboard:', e);
@@ -157,6 +196,7 @@ function renderAll() {
   renderKPIs();
   renderHourChart();
   renderRanking();
+  renderProgress();
   renderTable();
   _initMapSection();
 }
@@ -233,6 +273,53 @@ function renderRanking() {
   }).join('');
 }
 
+/* ── Progreso por tienda ──────────────────────────────────────────────── */
+const progressBody        = document.getElementById('progressBody');
+const progressEmpty       = document.getElementById('progressEmpty');
+const filterStoreProgress = document.getElementById('filterStoreProgress');
+
+filterStoreProgress && filterStoreProgress.addEventListener('input', renderProgress);
+
+function renderProgress() {
+  if (!progressBody) return;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const q     = (filterStoreProgress?.value || '').toLowerCase().trim();
+
+  // Agrupar por tienda
+  const byStore = {};
+  allSpins.forEach(s => {
+    if (!byStore[s.storeEmail]) {
+      byStore[s.storeEmail] = { name: s.storeName, today: 0, total: 0, won: 0, lost: 0 };
+    }
+    byStore[s.storeEmail].total++;
+    if (s.date === today) byStore[s.storeEmail].today++;
+    if (s.isWinner) byStore[s.storeEmail].won++;
+    else            byStore[s.storeEmail].lost++;
+  });
+
+  let rows = Object.values(byStore)
+    .sort((a, b) => b.total - a.total);
+
+  if (q) rows = rows.filter(r => r.name.toLowerCase().includes(q));
+
+  if (rows.length === 0) {
+    progressBody.innerHTML = '';
+    if (progressEmpty) progressEmpty.style.display = 'block';
+    return;
+  }
+  if (progressEmpty) progressEmpty.style.display = 'none';
+
+  progressBody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.name}</td>
+      <td class="a-td-num">${r.today}</td>
+      <td class="a-td-num">${r.total}</td>
+      <td class="a-td-win">${r.won}</td>
+      <td class="a-td-lose">${r.lost}</td>
+    </tr>`).join('');
+}
+
 function renderTable(filter = {}) {
   if (!logsBody) return;
 
@@ -273,6 +360,7 @@ btnRefresh && btnRefresh.addEventListener('click', async () => {
   btnRefresh.textContent = 'Cargando…';
   btnRefresh.disabled    = true;
   await loadDashboard();
+  _startAutoRefresh();   // reinicia el countdown desde 5:00
   btnRefresh.textContent = 'Actualizar';
   btnRefresh.disabled    = false;
 });

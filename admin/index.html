@@ -86,6 +86,31 @@
         <div id="rankingList" class="a-ranking"></div>
       </section>
 
+      <!-- Progreso por tienda -->
+      <section class="a-section">
+        <div class="a-table-header">
+          <h2 class="a-section-title" style="margin:0">Progreso por tienda</h2>
+          <div class="a-table-controls">
+            <input id="filterStoreProgress" type="text" class="a-filter-input" placeholder="Buscar tienda…" />
+          </div>
+        </div>
+        <div class="a-table-wrap a-table-scroll">
+          <table class="a-table">
+            <thead>
+              <tr>
+                <th>Tienda</th>
+                <th class="a-th-num">Tiros hoy</th>
+                <th class="a-th-num">Total tiros</th>
+                <th class="a-th-num">Ganados</th>
+                <th class="a-th-num">No ganados</th>
+              </tr>
+            </thead>
+            <tbody id="progressBody"></tbody>
+          </table>
+          <p id="progressEmpty" class="a-empty" style="display:none">Sin datos.</p>
+        </div>
+      </section>
+
       <!-- Tabla de logs -->
       <section class="a-section">
         <div class="a-table-header">
@@ -98,10 +123,13 @@
               <option value="NO GANADOR">Solo no ganadores</option>
             </select>
             <button id="btnExportAll" class="a-btn-outline" type="button">Exportar CSV</button>
-            <button id="btnRefresh"   class="a-btn-sm"     type="button">Actualizar</button>
+            <div class="a-refresh-wrap">
+              <button id="btnRefresh" class="a-btn-sm" type="button">Actualizar</button>
+              <span id="refreshStatus" class="a-refresh-status"></span>
+            </div>
           </div>
         </div>
-        <div class="a-table-wrap">
+        <div class="a-table-wrap a-table-scroll">
           <table class="a-table">
             <thead>
               <tr>
