@@ -557,6 +557,53 @@ body.mundial-theme .fab-config {
 /* Status text */
 body.mundial-theme .status { color: #8899bb; }
 
+/* ── LOGIN BOX: mantener colores oscuros dentro del recuadro blanco ── */
+body.mundial-theme .login-box {
+  background: #ffffff;
+  color: var(--maseca-dark);
+}
+body.mundial-theme .login-label   { color: #1a2e1a !important; }
+body.mundial-theme .login-sub     { color: #555 !important; }
+body.mundial-theme .login-input   { color: #1a2e1a !important; background: #fff; border-color: #d8ddd8; }
+body.mundial-theme .login-input::placeholder { color: #aaa; }
+body.mundial-theme .login-msg     { color: #c0392b; }
+body.mundial-theme .login-admin-link { color: #555 !important; }
+body.mundial-theme .login-link-btn   { color: #2a7a2a !important; }
+
+/* ── COMBO (dropdown de tiendas): fondo blanco → texto siempre oscuro ── */
+body.mundial-theme .combo-list {
+  background: #ffffff;
+  border-color: var(--maseca-green);
+}
+body.mundial-theme .combo-list li {
+  color: #1a2e1a !important;
+}
+body.mundial-theme .combo-list li:hover,
+body.mundial-theme .combo-list .combo-hl {
+  background: #f0f7f0;
+  color: #1a2e1a !important;
+}
+body.mundial-theme .combo-list .combo-active {
+  background: #e6f4ea;
+  color: #2a7a2a !important;
+}
+
+/* ── SCANNER: mejorar legibilidad de textos secundarios ── */
+body.mundial-theme .scanner-hint       { color: #c8d8ff; }
+body.mundial-theme .scanner-manual-link {
+  color: #a0b8e8;
+}
+body.mundial-theme .scanner-manual-link:hover { color: #FFD200; }
+body.mundial-theme .manual-code-input {
+  background: #fff;
+  color: #1a2e1a !important;
+  border-color: #2a4a7e;
+}
+body.mundial-theme .manual-code-input:focus { border-color: #FFD200; }
+body.mundial-theme .scanner-msg        { color: #c8d8ff; }
+body.mundial-theme .scanner-msg.ok     { color: #69f0ae; }
+body.mundial-theme .scanner-msg.error  { color: #ff7043; }
+
 /* ... hasta aquí para quitar el tema mundialista. */
 /* ================================================================== */
 
@@ -1012,6 +1059,6 @@ body.mundial-theme .scanner-dialog {
   color: #f0f4ff;
 }
 body.mundial-theme .scanner-header h3 { color: #f0f4ff; }
-body.mundial-theme .scanner-hint      { color: #8899bb; }
+body.mundial-theme .scanner-hint      { color: #c8d8ff; }
 body.mundial-theme .btn-scan { background: #FFD200; color: #0a1628; }
 body.mundial-theme .btn-scan:hover { filter: brightness(0.93); color: #0a1628; }
