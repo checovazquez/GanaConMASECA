@@ -117,6 +117,34 @@
         </div>
       </section>
 
+      <!-- Mapa de ubicaciones -->
+      <section class="a-section" id="mapSection">
+        <div class="a-table-header">
+          <h2 class="a-section-title" style="margin:0">📍 Mapa de ubicaciones</h2>
+          <div class="a-table-controls">
+            <input id="mapFilterStore" type="text" class="a-filter-input" placeholder="Filtrar por tienda…" />
+            <select id="mapFilterDate" class="a-filter-select">
+              <option value="">Todas las fechas</option>
+            </select>
+            <select id="mapFilterResult" class="a-filter-select">
+              <option value="">Todos</option>
+              <option value="GANADOR">Solo ganadores</option>
+              <option value="NO GANADOR">Solo no ganadores</option>
+            </select>
+            <button id="btnMapRefresh" class="a-btn-sm" type="button">Actualizar</button>
+          </div>
+        </div>
+        <div id="mapStats" class="a-map-stats">
+          <span id="mapStatTotal">— giros con coordenadas</span>
+          <span id="mapStatNoGeo" class="a-map-stat-warn"></span>
+        </div>
+        <div id="spinMap" class="a-map"></div>
+        <p class="a-map-legend">
+          <span class="a-legend-dot a-legend-win"></span> Ganador &nbsp;
+          <span class="a-legend-dot a-legend-lose"></span> No ganador
+        </p>
+      </section>
+
       <!-- Configuración global -->
       <section class="a-section">
         <h2 class="a-section-title">Configuración global de la ruleta</h2>
@@ -142,6 +170,10 @@
 
     </main>
   </div>
+
+  <!-- Leaflet.js (mapa de ubicaciones) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>

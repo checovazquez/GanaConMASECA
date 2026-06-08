@@ -298,11 +298,55 @@ storeSearch && storeSearch.addEventListener('keydown', e => {
 /* ── Estado ────────────────────────────────────────────────────────────── */
 let _currentUser = null;
 
+/* ── Geolocalización ───────────────────────────────────────────────────── */
+window._geoCoords = null;   // { lat, lon, accuracy }
+let _geoWatchId   = null;
+
+function _startGeo() {
+  if (!navigator.geolocation) return;
+  const opts = { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 };
+
+  // Primera lectura inmediata
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      window._geoCoords = {
+        lat:      pos.coords.latitude,
+        lon:      pos.coords.longitude,
+        accuracy: pos.coords.accuracy
+      };
+    },
+    err => console.warn('Geo error inicial:', err.message),
+    opts
+  );
+
+  // Actualizar continuamente mientras la sesión está activa
+  _geoWatchId = navigator.geolocation.watchPosition(
+    pos => {
+      window._geoCoords = {
+        lat:      pos.coords.latitude,
+        lon:      pos.coords.longitude,
+        accuracy: pos.coords.accuracy
+      };
+    },
+    err => console.warn('Geo watch error:', err.message),
+    opts
+  );
+}
+
+function _stopGeo() {
+  if (_geoWatchId !== null) {
+    navigator.geolocation.clearWatch(_geoWatchId);
+    _geoWatchId = null;
+  }
+  window._geoCoords = null;
+}
+
 /* ── Auth state ────────────────────────────────────────────────────────── */
 auth.onAuthStateChanged(async user => {
   if (user) {
     _currentUser = user;
     window.FB_CURRENT_USER = user;
+    _startGeo();   // Solicitar ubicación al iniciar sesión
     try {
       await _initForUser(user);
     } catch (e) {
@@ -312,6 +356,7 @@ auth.onAuthStateChanged(async user => {
   } else {
     _currentUser = null;
     window.FB_CURRENT_USER = null;
+    _stopGeo();
     _showLogin();
   }
 });
@@ -432,7 +477,7 @@ window.fbSaveSpin = async function (result) {
 
   // Registro del giro
   const spinRef = db.collection('spins').doc();
-  batch.set(spinRef, {
+  const spinData = {
     storeId:      _currentUser.uid,
     storeEmail:   _currentUser.email,
     timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
@@ -440,7 +485,16 @@ window.fbSaveSpin = async function (result) {
     isWinner,
     date:         now.toISOString().slice(0, 10),          // YYYY-MM-DD
     hour:         now.getHours()
-  });
+  };
+
+  // Adjuntar coordenadas si están disponibles
+  if (window._geoCoords) {
+    spinData.lat      = window._geoCoords.lat;
+    spinData.lon      = window._geoCoords.lon;
+    spinData.geoAccuracy = window._geoCoords.accuracy;
+  }
+
+  batch.set(spinRef, spinData);
 
   // Actualizar contadores de la tienda
   const statsRef = db.collection('storeStats').doc(_currentUser.uid);
