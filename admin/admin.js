@@ -275,6 +275,7 @@ function renderRanking() {
 
 /* ── Progreso por tienda ──────────────────────────────────────────────── */
 const progressBody        = document.getElementById('progressBody');
+const progressFoot        = document.getElementById('progressFoot');
 const progressEmpty       = document.getElementById('progressEmpty');
 const filterStoreProgress = document.getElementById('filterStoreProgress');
 
@@ -283,8 +284,13 @@ filterStoreProgress && filterStoreProgress.addEventListener('input', renderProgr
 function renderProgress() {
   if (!progressBody) return;
 
-  const today = new Date().toISOString().slice(0, 10);
-  const q     = (filterStoreProgress?.value || '').toLowerCase().trim();
+  const today       = new Date().toISOString().slice(0, 10);
+  const q           = (filterStoreProgress?.value || '').toLowerCase().trim();
+
+  // Capacidad total por tienda = winnersTotal × winProbX
+  const winnersTotal  = parseInt(aCfgWinnersTotal?.value || '0', 10);
+  const winProbX      = parseInt(aCfgWinProbX?.value     || '0', 10);
+  const capacityTotal = (winnersTotal && winProbX) ? winnersTotal * winProbX : 0;
 
   // Agrupar por tienda
   const byStore = {};
@@ -305,19 +311,43 @@ function renderProgress() {
 
   if (rows.length === 0) {
     progressBody.innerHTML = '';
+    if (progressFoot) progressFoot.innerHTML = '';
     if (progressEmpty) progressEmpty.style.display = 'block';
     return;
   }
   if (progressEmpty) progressEmpty.style.display = 'none';
 
-  progressBody.innerHTML = rows.map(r => `
-    <tr>
+  // Filas
+  progressBody.innerHTML = rows.map(r => {
+    const pending = capacityTotal > 0 ? Math.max(0, capacityTotal - r.total) : '—';
+    return `<tr>
       <td>${r.name}</td>
       <td class="a-td-num">${r.today}</td>
+      <td class="a-td-num">${pending}</td>
       <td class="a-td-num">${r.total}</td>
       <td class="a-td-win">${r.won}</td>
       <td class="a-td-lose">${r.lost}</td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
+
+  // Totales (solo de las filas visibles tras filtro)
+  const sumToday   = rows.reduce((s, r) => s + r.today, 0);
+  const sumTotal   = rows.reduce((s, r) => s + r.total, 0);
+  const sumPending = capacityTotal > 0
+    ? rows.reduce((s, r) => s + Math.max(0, capacityTotal - r.total), 0)
+    : '—';
+  const sumWon  = rows.reduce((s, r) => s + r.won,  0);
+  const sumLost = rows.reduce((s, r) => s + r.lost, 0);
+
+  if (progressFoot) progressFoot.innerHTML = `
+    <tr class="a-tfoot-row">
+      <td><strong>TOTAL (${rows.length} tiendas)</strong></td>
+      <td class="a-td-num"><strong>${sumToday}</strong></td>
+      <td class="a-td-num"><strong>${sumPending}</strong></td>
+      <td class="a-td-num"><strong>${sumTotal}</strong></td>
+      <td class="a-td-win"><strong>${sumWon}</strong></td>
+      <td class="a-td-lose"><strong>${sumLost}</strong></td>
+    </tr>`;
 }
 
 function renderTable(filter = {}) {

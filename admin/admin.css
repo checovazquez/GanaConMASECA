@@ -215,10 +215,18 @@ body {
   padding: 20px 0; font-size: .9rem;
 }
 /* Columnas numéricas del progreso */
-.a-th-num { text-align: right !important; }
-.a-td-num { text-align: right; font-variant-numeric: tabular-nums; }
+.a-th-num  { text-align: right !important; }
+.a-td-num  { text-align: right; font-variant-numeric: tabular-nums; }
 .a-td-win  { text-align: right; color: var(--win-color); font-weight: 700; font-variant-numeric: tabular-nums; }
 .a-td-lose { text-align: right; color: var(--lose-color); font-variant-numeric: tabular-nums; }
+/* Fila de totales en el footer */
+.a-tfoot-row td {
+  padding: 9px 12px;
+  background: var(--bg);
+  border-top: 2px solid var(--border);
+  font-size: .88rem;
+  position: sticky; bottom: 0;
+}
 
 /* ── Indicador auto-refresh ─────────────────────────────────────────── */
 .a-refresh-wrap {
