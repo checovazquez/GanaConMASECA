@@ -342,7 +342,9 @@
       const MUNDIAL_KEY = 'maseca_mundial_theme';
       const toggle = document.getElementById('toggleMundial');
       if (!toggle) return;
-      const saved = localStorage.getItem(MUNDIAL_KEY) === '1';
+      // Si nunca se guardó preferencia, activar el tema mundial por defecto
+      const stored = localStorage.getItem(MUNDIAL_KEY);
+      const saved  = stored === null ? true : stored === '1';
       toggle.checked = saved;
       document.body.classList.toggle('mundial-theme', saved);
       toggle.addEventListener('change', () => {
