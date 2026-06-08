@@ -178,8 +178,23 @@ adminPwdInput && adminPwdInput.addEventListener('keydown', e => { if (e.key === 
 /* ── Combobox de tiendas ───────────────────────────────────────────────── */
 const storeSearch    = document.getElementById('storeSearch');
 const storeDropdown  = document.getElementById('storeDropdown');
+const comboClear     = document.getElementById('comboClear');
 let   _selectedStore = null;
 let   _hlIndex       = -1;   // índice resaltado con teclado
+
+function _updateClearBtn() {
+  if (comboClear) comboClear.style.display = storeSearch.value.length > 0 ? 'block' : 'none';
+}
+
+comboClear && comboClear.addEventListener('mousedown', e => {
+  e.preventDefault();          // no quitar el foco del input
+  storeSearch.value  = '';
+  loginEmail.value   = '';
+  _selectedStore     = null;
+  _updateClearBtn();
+  _renderDropdown('');
+  storeSearch.focus();
+});
 
 function _renderDropdown(q = '') {
   const query   = q.toLowerCase().trim();
@@ -223,6 +238,7 @@ function _selectStore(store) {
   storeDropdown.classList.remove('open');
   storeSearch.setAttribute('aria-expanded', 'false');
   storeSearch.classList.remove('combo-empty');
+  _updateClearBtn();
 }
 
 function _closeDropdown() {
@@ -242,6 +258,7 @@ storeSearch && storeSearch.addEventListener('focus', () => {
 storeSearch && storeSearch.addEventListener('input', () => {
   _selectedStore = null;
   loginEmail.value = '';
+  _updateClearBtn();
   _renderDropdown(storeSearch.value);
 });
 
