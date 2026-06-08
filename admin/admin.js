@@ -126,13 +126,17 @@ async function loadSpins() {
     const d  = doc.data();
     const ts = d.timestamp ? d.timestamp.toDate() : null;
     return {
-      id:         doc.id,
-      storeEmail: d.storeEmail || '—',
-      result:     d.result     || '—',
-      isWinner:   d.isWinner   || false,
-      date:       d.date       || '',
-      hour:       typeof d.hour === 'number' ? d.hour : (ts ? ts.getHours() : 0),
-      ts
+      id:          doc.id,
+      storeEmail:  d.storeEmail  || '—',
+      result:      d.result      || '—',
+      isWinner:    d.isWinner    || false,
+      date:        d.date        || '',
+      hour:        typeof d.hour === 'number' ? d.hour : (ts ? ts.getHours() : 0),
+      ts,
+      timestamp:   d.timestamp   || null,   // para el popup del mapa
+      lat:         d.lat         ?? null,
+      lon:         d.lon         ?? null,
+      geoAccuracy: d.geoAccuracy ?? null
     };
   });
 }
