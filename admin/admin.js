@@ -125,15 +125,17 @@ async function loadSpins() {
   allSpins = snap.docs.map(doc => {
     const d  = doc.data();
     const ts = d.timestamp ? d.timestamp.toDate() : null;
+    const email = d.storeEmail || '—';
     return {
       id:          doc.id,
-      storeEmail:  d.storeEmail  || '—',
+      storeEmail:  email,
+      storeName:   storeName(email),          // nombre completo para mostrar
       result:      d.result      || '—',
       isWinner:    d.isWinner    || false,
       date:        d.date        || '',
       hour:        typeof d.hour === 'number' ? d.hour : (ts ? ts.getHours() : 0),
       ts,
-      timestamp:   d.timestamp   || null,   // para el popup del mapa
+      timestamp:   d.timestamp   || null,
       lat:         d.lat         ?? null,
       lon:         d.lon         ?? null,
       geoAccuracy: d.geoAccuracy ?? null
@@ -200,7 +202,7 @@ function renderRanking() {
   // Agrupar por tienda
   const byStore = {};
   allSpins.forEach(s => {
-    if (!byStore[s.storeEmail]) byStore[s.storeEmail] = { spins: 0, winners: 0 };
+    if (!byStore[s.storeEmail]) byStore[s.storeEmail] = { name: s.storeName, spins: 0, winners: 0 };
     byStore[s.storeEmail].spins++;
     if (s.isWinner) byStore[s.storeEmail].winners++;
   });
@@ -217,12 +219,11 @@ function renderRanking() {
   const maxSpins = sorted[0][1].spins;
 
   rankingList.innerHTML = sorted.map(([email, data], i) => {
-    const pct       = Math.round((data.spins / maxSpins) * 100);
-    const storeName = email.split('@')[0];
+    const pct = Math.round((data.spins / maxSpins) * 100);
     return `
       <div class="a-rank-row">
         <span class="a-rank-pos">#${i + 1}</span>
-        <span class="a-rank-name" title="${email}">${storeName}</span>
+        <span class="a-rank-name" title="${email}">${data.name}</span>
         <div class="a-rank-bar-wrap">
           <div class="a-rank-bar" style="width:${pct}%"></div>
         </div>
@@ -239,7 +240,7 @@ function renderTable(filter = {}) {
   const resultFilter = (filter.result || filterResult?.value || '');
 
   const filtered = allSpins.filter(s => {
-    if (storeFilter  && !s.storeEmail.toLowerCase().includes(storeFilter)) return false;
+    if (storeFilter  && !s.storeName.toLowerCase().includes(storeFilter)) return false;
     if (resultFilter && s.result !== resultFilter) return false;
     return true;
   });
@@ -255,9 +256,8 @@ function renderTable(filter = {}) {
     const fecha = s.ts ? s.ts.toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' }) : '—';
     const hora  = s.ts ? s.ts.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' }) : '—';
     const cls   = s.isWinner ? 'a-row-win' : '';
-    const store = s.storeEmail.split('@')[0];
     return `<tr class="${cls}">
-      <td title="${s.storeEmail}">${store}</td>
+      <td title="${s.storeEmail}">${s.storeName}</td>
       <td>${fecha}</td>
       <td>${hora}</td>
       <td class="${s.isWinner ? 'a-winner' : 'a-loser'}">${s.result}</td>
@@ -283,16 +283,16 @@ btnExportAll && btnExportAll.addEventListener('click', () => {
   const resultFilter = filterResult?.value || '';
 
   const rows = allSpins.filter(s => {
-    if (storeFilter  && !s.storeEmail.toLowerCase().includes(storeFilter)) return false;
+    if (storeFilter  && !s.storeName.toLowerCase().includes(storeFilter)) return false;
     if (resultFilter && s.result !== resultFilter) return false;
     return true;
   });
 
-  const header = ['tienda', 'fecha_local', 'hora', 'resultado', 'ganador'];
+  const header = ['tienda', 'correo', 'fecha_local', 'hora', 'resultado', 'ganador'];
   const lines  = rows.map(s => {
     const fecha = s.ts ? s.ts.toLocaleDateString('es-MX') : '';
     const hora  = s.ts ? s.ts.toLocaleTimeString('es-MX') : '';
-    return [s.storeEmail, fecha, hora, s.result, s.isWinner ? 'SI' : 'NO']
+    return [s.storeName, s.storeEmail, fecha, hora, s.result, s.isWinner ? 'SI' : 'NO']
       .map(v => `"${String(v).replace(/"/g, '""')}"`)
       .join(',');
   });
@@ -319,11 +319,17 @@ let _mapMarkers = [];
 
 function _populateStoreFilter() {
   if (!mapFilterStore) return;
-  const emails = [...new Set(allSpins.map(s => s.storeEmail).filter(s => s && s !== '—'))].sort();
+  // Pares únicos email→nombre, ordenados por nombre
+  const pairs = [...new Map(
+    allSpins
+      .filter(s => s.storeEmail && s.storeEmail !== '—')
+      .map(s => [s.storeEmail, s.storeName])
+  ).entries()].sort((a, b) => a[1].localeCompare(b[1]));
+
   while (mapFilterStore.options.length > 1) mapFilterStore.remove(1);
-  emails.forEach(e => {
+  pairs.forEach(([email, name]) => {
     const opt = document.createElement('option');
-    opt.value = e; opt.textContent = e;
+    opt.value = email; opt.textContent = name;
     mapFilterStore.appendChild(opt);
   });
 }
@@ -393,7 +399,7 @@ function renderMap() {
     marker.bindPopup(`
       <div class="a-map-popup">
         <b>${s.result === 'GANADOR' ? '🏆 GANADOR' : '❌ No ganador'}</b><br>
-        <small>${s.storeEmail}</small><br>
+        <span>${s.storeName}</span><br>
         ${ts}<br>
         <small style="color:#888">±${Math.round(s.geoAccuracy || 0)} m</small>
       </div>`);
