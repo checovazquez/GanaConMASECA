@@ -47,6 +47,8 @@ auth.onAuthStateChanged(user => {
     adminLogin.style.display = 'none';
     adminApp.style.display   = 'block';
     loadDashboard();
+    // Invalidar tamaño del mapa después de que sea visible
+    setTimeout(() => { if (_map) _map.invalidateSize(); }, 300);
   } else if (user) {
     // Usuario autenticado pero no es admin
     auth.signOut();
@@ -150,6 +152,7 @@ function renderAll() {
   renderHourChart();
   renderRanking();
   renderTable();
+  _initMapSection();
 }
 
 function renderKPIs() {
@@ -298,6 +301,125 @@ btnExportAll && btnExportAll.addEventListener('click', () => {
   a.click();
   URL.revokeObjectURL(a.href);
 });
+
+/* ── Mapa de ubicaciones (Leaflet) ────────────────────────────────────── */
+const mapFilterStore  = document.getElementById('mapFilterStore');
+const mapFilterDate   = document.getElementById('mapFilterDate');
+const mapFilterResult = document.getElementById('mapFilterResult');
+const btnMapRefresh   = document.getElementById('btnMapRefresh');
+const mapStatTotal    = document.getElementById('mapStatTotal');
+const mapStatNoGeo    = document.getElementById('mapStatNoGeo');
+
+let _map        = null;   // instancia de Leaflet
+let _mapMarkers = [];     // marcadores actuales
+
+function _initMap() {
+  if (_map) return;   // ya inicializado
+
+  _map = L.map('spinMap', {
+    center: [23.6, -102.5],   // centro de México
+    zoom:   5
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19
+  }).addTo(_map);
+}
+
+function _populateDateFilter() {
+  if (!mapFilterDate) return;
+  const dates = [...new Set(allSpins.map(s => s.date).filter(Boolean))].sort().reverse();
+  // Mantener primer option ("Todas las fechas"), limpiar el resto
+  while (mapFilterDate.options.length > 1) mapFilterDate.remove(1);
+  dates.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = d;
+    mapFilterDate.appendChild(opt);
+  });
+}
+
+function _iconFor(isWinner) {
+  const color = isWinner ? '#22c55e' : '#ef4444';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="24" height="36">
+    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24C24 5.4 18.6 0 12 0z"
+          fill="${color}" stroke="rgba(0,0,0,.4)" stroke-width="1.5"/>
+    <circle cx="12" cy="12" r="5" fill="white" opacity=".85"/>
+  </svg>`;
+  return L.divIcon({
+    html: svg,
+    className: '',
+    iconSize: [24, 36],
+    iconAnchor: [12, 36],
+    popupAnchor: [0, -36]
+  });
+}
+
+function renderMap() {
+  _initMap();
+
+  // Limpiar marcadores anteriores
+  _mapMarkers.forEach(m => m.remove());
+  _mapMarkers = [];
+
+  const storeQ  = (mapFilterStore?.value  || '').toLowerCase().trim();
+  const dateQ   = mapFilterDate?.value  || '';
+  const resultQ = mapFilterResult?.value || '';
+
+  const withGeo    = allSpins.filter(s => s.lat != null && s.lon != null);
+  const withoutGeo = allSpins.length - withGeo.length;
+
+  // Filtrar
+  const filtered = withGeo.filter(s => {
+    if (storeQ   && !s.storeEmail.toLowerCase().includes(storeQ)) return false;
+    if (dateQ    && s.date !== dateQ)  return false;
+    if (resultQ  && s.result !== resultQ) return false;
+    return true;
+  });
+
+  if (mapStatTotal) mapStatTotal.textContent = `${filtered.length} giro${filtered.length !== 1 ? 's' : ''} con coordenadas`;
+  if (mapStatNoGeo) {
+    mapStatNoGeo.textContent = withoutGeo > 0
+      ? `(${withoutGeo} sin ubicación — giros anteriores a esta función)`
+      : '';
+  }
+
+  if (filtered.length === 0) return;
+
+  const bounds = [];
+  filtered.forEach(s => {
+    const marker = L.marker([s.lat, s.lon], { icon: _iconFor(s.isWinner) });
+    const ts     = s.timestamp?.toDate ? s.timestamp.toDate().toLocaleString('es-MX') : (s.date || '');
+    marker.bindPopup(`
+      <div class="a-map-popup">
+        <b>${s.result === 'GANADOR' ? '🏆 GANADOR' : '❌ No ganador'}</b><br>
+        <small>${s.storeEmail}</small><br>
+        ${ts}<br>
+        <small style="color:#888">±${Math.round(s.geoAccuracy || 0)} m</small>
+      </div>
+    `);
+    marker.addTo(_map);
+    _mapMarkers.push(marker);
+    bounds.push([s.lat, s.lon]);
+  });
+
+  // Ajustar vista para mostrar todos los pines
+  if (bounds.length > 0) {
+    _map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+  }
+}
+
+// Poblar fechas + renderizar mapa cuando cargue el dashboard
+function _initMapSection() {
+  _populateDateFilter();
+  renderMap();
+}
+
+btnMapRefresh   && btnMapRefresh.addEventListener('click', renderMap);
+mapFilterStore  && mapFilterStore.addEventListener('input',  renderMap);
+mapFilterDate   && mapFilterDate.addEventListener('change',  renderMap);
+mapFilterResult && mapFilterResult.addEventListener('change', renderMap);
 
 /* ── Guardar config ───────────────────────────────────────────────────── */
 adminCfgForm && adminCfgForm.addEventListener('submit', async e => {
