@@ -122,7 +122,14 @@
         <div class="a-table-header">
           <h2 class="a-section-title" style="margin:0">📍 Mapa de ubicaciones</h2>
           <div class="a-table-controls">
-            <input id="mapFilterStore" type="text" class="a-filter-input" placeholder="Filtrar por tienda…" />
+            <div class="combo-wrap map-combo-wrap" id="mapStoreComboWrap">
+              <input id="mapFilterStore" type="text" class="a-filter-input combo-input map-combo-input"
+                     placeholder="Todas las tiendas…" autocomplete="off"
+                     role="combobox" aria-expanded="false" aria-haspopup="listbox" />
+              <button id="mapComboClear" class="combo-clear map-combo-clear" type="button" aria-label="Limpiar" style="display:none">✕</button>
+              <span class="combo-arrow" aria-hidden="true">▾</span>
+              <ul id="mapStoreDropdown" class="combo-list" role="listbox"></ul>
+            </div>
             <select id="mapFilterDate" class="a-filter-select">
               <option value="">Todas las fechas</option>
             </select>

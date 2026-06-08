@@ -224,6 +224,68 @@ body {
 .a-cfg-ok  { color: var(--green); }
 .a-cfg-err { color: var(--red); }
 
+/* ── Combo de tiendas en el mapa (reutiliza estilos .combo-* de styles.css) */
+.map-combo-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.map-combo-input {
+  width: 220px;
+  padding-right: 52px !important;
+  cursor: pointer;
+}
+/* Dropdown */
+.map-combo-wrap .combo-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 320px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1.5px solid var(--green);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.13);
+  list-style: none;
+  margin: 0; padding: 4px 0;
+  z-index: 200;
+  display: none;
+}
+.map-combo-wrap .combo-list.open { display: block; }
+.map-combo-wrap .combo-list li {
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: .9rem;
+  color: #1a2e1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.map-combo-wrap .combo-list li:hover,
+.map-combo-wrap .combo-list li.combo-hl  { background: #f0f7f0; }
+.map-combo-wrap .combo-list li.combo-active { background: #e6f4ea; font-weight: 600; }
+/* Flecha y botón limpiar */
+.map-combo-wrap .combo-arrow {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+  color: #888;
+  font-size: .8rem;
+}
+.map-combo-wrap .combo-clear {
+  position: absolute;
+  right: 26px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  font-size: .85rem;
+  padding: 2px 4px;
+  line-height: 1;
+}
+.map-combo-wrap .combo-clear:hover { color: #333; }
+
 /* ── Mapa de ubicaciones ─────────────────────────────────────────────── */
 .a-map {
   width: 100%;

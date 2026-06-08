@@ -307,24 +307,135 @@ btnExportAll && btnExportAll.addEventListener('click', () => {
 });
 
 /* ── Mapa de ubicaciones (Leaflet) ────────────────────────────────────── */
-const mapFilterStore  = document.getElementById('mapFilterStore');
-const mapFilterDate   = document.getElementById('mapFilterDate');
-const mapFilterResult = document.getElementById('mapFilterResult');
-const btnMapRefresh   = document.getElementById('btnMapRefresh');
-const mapStatTotal    = document.getElementById('mapStatTotal');
-const mapStatNoGeo    = document.getElementById('mapStatNoGeo');
+const mapFilterStore    = document.getElementById('mapFilterStore');
+const mapStoreDropdown  = document.getElementById('mapStoreDropdown');
+const mapComboClear     = document.getElementById('mapComboClear');
+const mapFilterDate     = document.getElementById('mapFilterDate');
+const mapFilterResult   = document.getElementById('mapFilterResult');
+const btnMapRefresh     = document.getElementById('btnMapRefresh');
+const mapStatTotal      = document.getElementById('mapStatTotal');
+const mapStatNoGeo      = document.getElementById('mapStatNoGeo');
 
-let _map        = null;   // instancia de Leaflet
-let _mapMarkers = [];     // marcadores actuales
+let _map           = null;
+let _mapMarkers    = [];
+let _mapStores     = [];   // lista de emails únicos con su etiqueta
+let _mapSelected   = null; // { email, label } o null = "Todas"
+let _mapHlIndex    = -1;
 
-function _initMap() {
-  if (_map) return;   // ya inicializado
+/* — Combo de tiendas del mapa — */
+function _mapUpdateClear() {
+  if (mapComboClear) mapComboClear.style.display = mapFilterStore.value ? 'block' : 'none';
+}
 
-  _map = L.map('spinMap', {
-    center: [23.6, -102.5],   // centro de México
-    zoom:   5
+function _mapBuildStoreList() {
+  // Extraer emails únicos de allSpins y construir lista ordenada
+  const emails = [...new Set(allSpins.map(s => s.storeEmail).filter(s => s && s !== '—'))].sort();
+  _mapStores = emails.map(e => ({ email: e, label: e }));
+}
+
+function _mapRenderDropdown(q) {
+  if (!mapStoreDropdown) return;
+  const query   = (q || '').toLowerCase().trim();
+  const all     = { email: '', label: 'Todas las tiendas' };
+  const matches = query
+    ? _mapStores.filter(s => s.label.toLowerCase().includes(query))
+    : [all, ..._mapStores];
+
+  mapStoreDropdown.innerHTML = '';
+  _mapHlIndex = -1;
+
+  if (!matches.length) {
+    mapStoreDropdown.classList.remove('open');
+    mapFilterStore.setAttribute('aria-expanded', 'false');
+    return;
+  }
+
+  matches.forEach(store => {
+    const li = document.createElement('li');
+    li.textContent = store.label;
+    li.setAttribute('role', 'option');
+    if (_mapSelected && _mapSelected.email === store.email) li.classList.add('combo-active');
+    li.addEventListener('mousedown', e => {
+      e.preventDefault();
+      _mapSelectStore(store);
+    });
+    mapStoreDropdown.appendChild(li);
   });
 
+  mapStoreDropdown.classList.add('open');
+  mapFilterStore.setAttribute('aria-expanded', 'true');
+}
+
+function _mapSelectStore(store) {
+  _mapSelected = store.email === '' ? null : store;
+  mapFilterStore.value = store.email === '' ? '' : store.label;
+  mapStoreDropdown.classList.remove('open');
+  mapFilterStore.setAttribute('aria-expanded', 'false');
+  _mapUpdateClear();
+  renderMap();
+}
+
+function _mapCloseDropdown() {
+  mapStoreDropdown.classList.remove('open');
+  mapFilterStore.setAttribute('aria-expanded', 'false');
+  // Restaurar texto si el usuario escribió a medias sin seleccionar
+  if (_mapSelected) {
+    mapFilterStore.value = _mapSelected.label;
+  } else if (!mapFilterStore.value) {
+    mapFilterStore.value = '';
+  }
+}
+
+mapFilterStore && mapFilterStore.addEventListener('focus', () => {
+  _mapRenderDropdown(mapFilterStore.value);
+});
+mapFilterStore && mapFilterStore.addEventListener('input', () => {
+  _mapSelected = null;
+  _mapUpdateClear();
+  _mapRenderDropdown(mapFilterStore.value);
+});
+mapFilterStore && mapFilterStore.addEventListener('blur', () => {
+  setTimeout(_mapCloseDropdown, 160);
+});
+mapFilterStore && mapFilterStore.addEventListener('keydown', e => {
+  const items = mapStoreDropdown.querySelectorAll('li');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _mapHlIndex = Math.min(_mapHlIndex + 1, items.length - 1);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _mapHlIndex = Math.max(_mapHlIndex - 1, 0);
+  } else if (e.key === 'Enter') {
+    if (_mapHlIndex >= 0 && items[_mapHlIndex]) {
+      e.preventDefault();
+      const label = items[_mapHlIndex].textContent;
+      const store = label === 'Todas las tiendas'
+        ? { email: '', label: 'Todas las tiendas' }
+        : _mapStores.find(s => s.label === label);
+      if (store) _mapSelectStore(store);
+    }
+    return;
+  } else if (e.key === 'Escape') {
+    _mapCloseDropdown(); return;
+  } else { return; }
+  items.forEach((li, i) => li.classList.toggle('combo-hl', i === _mapHlIndex));
+  items[_mapHlIndex]?.scrollIntoView({ block: 'nearest' });
+});
+mapComboClear && mapComboClear.addEventListener('mousedown', e => {
+  e.preventDefault();
+  _mapSelected = null;
+  mapFilterStore.value = '';
+  _mapUpdateClear();
+  mapFilterStore.focus();
+  _mapRenderDropdown('');
+  renderMap();
+});
+
+/* — Mapa Leaflet — */
+function _initMap() {
+  if (_map) return;
+  _map = L.map('spinMap', { center: [23.6, -102.5], zoom: 5 });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     maxZoom: 19
@@ -334,12 +445,10 @@ function _initMap() {
 function _populateDateFilter() {
   if (!mapFilterDate) return;
   const dates = [...new Set(allSpins.map(s => s.date).filter(Boolean))].sort().reverse();
-  // Mantener primer option ("Todas las fechas"), limpiar el resto
   while (mapFilterDate.options.length > 1) mapFilterDate.remove(1);
   dates.forEach(d => {
     const opt = document.createElement('option');
-    opt.value = d;
-    opt.textContent = d;
+    opt.value = d; opt.textContent = d;
     mapFilterDate.appendChild(opt);
   });
 }
@@ -351,42 +460,32 @@ function _iconFor(isWinner) {
           fill="${color}" stroke="rgba(0,0,0,.4)" stroke-width="1.5"/>
     <circle cx="12" cy="12" r="5" fill="white" opacity=".85"/>
   </svg>`;
-  return L.divIcon({
-    html: svg,
-    className: '',
-    iconSize: [24, 36],
-    iconAnchor: [12, 36],
-    popupAnchor: [0, -36]
-  });
+  return L.divIcon({ html: svg, className: '', iconSize: [24,36], iconAnchor: [12,36], popupAnchor: [0,-36] });
 }
 
 function renderMap() {
   _initMap();
-
-  // Limpiar marcadores anteriores
   _mapMarkers.forEach(m => m.remove());
   _mapMarkers = [];
 
-  const storeQ  = (mapFilterStore?.value  || '').toLowerCase().trim();
+  const emailQ  = _mapSelected ? _mapSelected.email : '';
   const dateQ   = mapFilterDate?.value  || '';
   const resultQ = mapFilterResult?.value || '';
 
   const withGeo    = allSpins.filter(s => s.lat != null && s.lon != null);
   const withoutGeo = allSpins.length - withGeo.length;
 
-  // Filtrar
   const filtered = withGeo.filter(s => {
-    if (storeQ   && !s.storeEmail.toLowerCase().includes(storeQ)) return false;
-    if (dateQ    && s.date !== dateQ)  return false;
-    if (resultQ  && s.result !== resultQ) return false;
+    if (emailQ  && s.storeEmail !== emailQ)  return false;
+    if (dateQ   && s.date !== dateQ)          return false;
+    if (resultQ && s.result !== resultQ)      return false;
     return true;
   });
 
   if (mapStatTotal) mapStatTotal.textContent = `${filtered.length} giro${filtered.length !== 1 ? 's' : ''} con coordenadas`;
   if (mapStatNoGeo) {
     mapStatNoGeo.textContent = withoutGeo > 0
-      ? `(${withoutGeo} sin ubicación — giros anteriores a esta función)`
-      : '';
+      ? `(${withoutGeo} sin ubicación — giros anteriores a esta función)` : '';
   }
 
   if (filtered.length === 0) return;
@@ -394,34 +493,31 @@ function renderMap() {
   const bounds = [];
   filtered.forEach(s => {
     const marker = L.marker([s.lat, s.lon], { icon: _iconFor(s.isWinner) });
-    const ts     = s.timestamp?.toDate ? s.timestamp.toDate().toLocaleString('es-MX') : (s.date || '');
+    const ts = s.ts ? s.ts.toLocaleString('es-MX') : (s.date || '');
     marker.bindPopup(`
       <div class="a-map-popup">
         <b>${s.result === 'GANADOR' ? '🏆 GANADOR' : '❌ No ganador'}</b><br>
         <small>${s.storeEmail}</small><br>
         ${ts}<br>
         <small style="color:#888">±${Math.round(s.geoAccuracy || 0)} m</small>
-      </div>
-    `);
+      </div>`);
     marker.addTo(_map);
     _mapMarkers.push(marker);
     bounds.push([s.lat, s.lon]);
   });
 
-  // Ajustar vista para mostrar todos los pines
   if (bounds.length > 0) {
     _map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
   }
 }
 
-// Poblar fechas + renderizar mapa cuando cargue el dashboard
 function _initMapSection() {
+  _mapBuildStoreList();
   _populateDateFilter();
   renderMap();
 }
 
 btnMapRefresh   && btnMapRefresh.addEventListener('click', renderMap);
-mapFilterStore  && mapFilterStore.addEventListener('input',  renderMap);
 mapFilterDate   && mapFilterDate.addEventListener('change',  renderMap);
 mapFilterResult && mapFilterResult.addEventListener('change', renderMap);
 
