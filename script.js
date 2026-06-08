@@ -15,12 +15,17 @@ const btnOk      = document.getElementById('btnOk');
 const centerText = document.getElementById('centerText');
 
 /* ---------- Scanner de tickets ---------- */
-const scannerOverlay = document.getElementById('scannerOverlay');
-const scannerMsg     = document.getElementById('scannerMsg');
-const scannerActions = document.getElementById('scannerActions');
-const btnScan        = document.getElementById('btnScan');
-const btnScanClose   = document.getElementById('btnScanClose');
-const btnRescan      = document.getElementById('btnRescan');
+const scannerOverlay      = document.getElementById('scannerOverlay');
+const scannerMsg          = document.getElementById('scannerMsg');
+const scannerActions      = document.getElementById('scannerActions');
+const btnScan             = document.getElementById('btnScan');
+const btnScanClose        = document.getElementById('btnScanClose');
+const btnRescan           = document.getElementById('btnRescan');
+const scannerCamSection   = document.getElementById('scannerCamSection');
+const scannerManualSection= document.getElementById('scannerManualSection');
+const manualCodeInput     = document.getElementById('manualCodeInput');
+const btnManualSubmit     = document.getElementById('btnManualSubmit');
+const btnToggleManual     = document.getElementById('btnToggleManual');
 
 /* ---------- Admin: PIN & panel ---------- */
 const btnConfig        = document.getElementById('btnConfig');
@@ -606,43 +611,16 @@ btnOk && btnOk.addEventListener('click', () => {
 });
 
 /* ---------- Scanner de tickets ---------- */
-/*
- * Estrategia dual:
- *   1. BarcodeDetector (nativo, Chrome/Android) — rápido, sin librería JS
- *   2. html5-qrcode (fallback Safari/Firefox)   — lento pero universal
- *
- * Siempre limpiamos el viewport antes de iniciar para evitar el bug
- * de "segundo scan no funciona" causado por el DOM sucio de la sesión anterior.
- */
 let _scannerRunning = false;
 let _html5Scanner   = null;
+let _inManualMode   = false;
 
-function updateScanUI() {
-  if (!btnScan || !btnSpin) return;
-  const total = totalParticipations();
-  if (total > 0 && spins >= total) {
-    btnScan.style.display = 'none';
-    btnSpin.style.display = 'none';
-    return;
-  }
-  if (ticketValidated) {
-    btnScan.style.display = 'none';
-    btnSpin.style.display = '';
-    btnSpin.disabled      = !canSpin();
-    btnSpin.textContent   = 'Girar';
-  } else {
-    btnScan.style.display = '';
-    btnSpin.style.display = 'none';
-    btnSpin.disabled      = true;
-  }
-}
-
-async function openScanner() {
+function openScanner() {
   if (!scannerOverlay) return;
   _resetScannerUI();
   scannerOverlay.style.display = 'flex';
   document.body.style.overflow = 'hidden';
-  await _startCamera();
+  _startCamera();
 }
 
 async function closeScanner() {
@@ -652,19 +630,50 @@ async function closeScanner() {
 }
 
 function _resetScannerUI() {
-  if (scannerMsg)     { scannerMsg.textContent = ''; scannerMsg.className = 'scanner-msg'; }
-  if (scannerActions) { scannerActions.style.display = 'none'; }
+  _inManualMode = false;
+  if (scannerMsg)            { scannerMsg.textContent = ''; scannerMsg.className = 'scanner-msg'; }
+  if (scannerActions)        { scannerActions.style.display = 'none'; }
+  if (scannerCamSection)     { scannerCamSection.style.display = 'block'; }
+  if (scannerManualSection)  { scannerManualSection.style.display = 'none'; }
+  if (btnToggleManual)       { btnToggleManual.textContent = '⌨️ Captura manual'; }
+  if (manualCodeInput)       { manualCodeInput.value = ''; }
+}
+
+async function _enterManualMode() {
+  _inManualMode = true;
+  await _stopCamera();
+  if (scannerCamSection)    scannerCamSection.style.display    = 'none';
+  if (scannerManualSection) scannerManualSection.style.display = 'block';
+  if (btnToggleManual)      btnToggleManual.textContent        = '📷 Escanear';
+  if (scannerActions)       scannerActions.style.display       = 'none';
+  _setScanMsg('', '');
+  setTimeout(() => manualCodeInput && manualCodeInput.focus(), 80);
+}
+
+async function _enterCameraMode() {
+  _inManualMode = false;
+  if (manualCodeInput)      manualCodeInput.value              = '';
+  if (scannerCamSection)    scannerCamSection.style.display    = 'block';
+  if (scannerManualSection) scannerManualSection.style.display = 'none';
+  if (btnToggleManual)      btnToggleManual.textContent        = '⌨️ Captura manual';
+  if (scannerActions)       scannerActions.style.display       = 'none';
+  _setScanMsg('', '');
+  await _startCamera();
 }
 
 async function _startCamera() {
   if (_scannerRunning) return;
   const vp = document.getElementById('scannerViewport');
   if (!vp) return;
-  vp.innerHTML = '';  // limpia estado previo — garantiza que el segundo scan funcione
 
   const tryStart = async (facingMode) => {
     _html5Scanner = new Html5Qrcode('scannerViewport');
-    await _html5Scanner.start({ facingMode }, { fps: 15 }, _handleBarcode, () => {});
+    await _html5Scanner.start(
+      { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+      { fps: 10, experimentalFeatures: { useBarCodeDetectorIfSupported: false } },
+      _handleBarcode,
+      () => {}
+    );
     _scannerRunning = true;
   };
   try {
@@ -688,11 +697,8 @@ async function _stopCamera() {
   }
 }
 
-async function _handleBarcode(code) {
-  if (!_scannerRunning) return;
-  await _stopCamera();
+async function _validateAndClose(code) {
   _setScanMsg('Validando ticket…', '');
-
   try {
     const esValido = await window.fbValidateTicket(code);
     if (!esValido) {
@@ -703,15 +709,18 @@ async function _handleBarcode(code) {
     await window.fbMarkTicketUsed(code);
     ticketValidated = true;
     _setScanMsg('✓ Ticket válido', 'ok');
-    setTimeout(async () => {
-      await closeScanner();
-      updateScanUI();
-    }, 1200);
+    setTimeout(async () => { await closeScanner(); updateScanUI(); }, 1200);
   } catch(e) {
-    console.error('Error validando ticket:', e);
+    console.error('[Scanner] validate:', e);
     _setScanMsg('Error al validar. Intenta de nuevo.', 'error');
     if (scannerActions) scannerActions.style.display = 'block';
   }
+}
+
+async function _handleBarcode(code) {
+  if (!_scannerRunning) return;
+  await _stopCamera();
+  await _validateAndClose(code);
 }
 
 function _setScanMsg(text, type) {
@@ -720,12 +729,43 @@ function _setScanMsg(text, type) {
   scannerMsg.className   = 'scanner-msg' + (type ? ' ' + type : '');
 }
 
-btnScan      && btnScan.addEventListener('click', openScanner);
-btnScanClose && btnScanClose.addEventListener('click', closeScanner);
-btnRescan    && btnRescan.addEventListener('click', async () => {
-  _resetScannerUI();
-  await _startCamera();
+btnScan           && btnScan.addEventListener('click', openScanner);
+btnScanClose      && btnScanClose.addEventListener('click', closeScanner);
+btnRescan         && btnRescan.addEventListener('click', _enterCameraMode);
+btnToggleManual   && btnToggleManual.addEventListener('click', () =>
+  _inManualMode ? _enterCameraMode() : _enterManualMode()
+);
+btnManualSubmit   && btnManualSubmit.addEventListener('click', async () => {
+  const code = manualCodeInput ? manualCodeInput.value.trim() : '';
+  if (!code) { _setScanMsg('Ingresa el número del ticket.', 'error'); return; }
+  btnManualSubmit.disabled = true;
+  await _validateAndClose(code);
+  btnManualSubmit.disabled = false;
 });
+manualCodeInput   && manualCodeInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); btnManualSubmit && btnManualSubmit.click(); }
+});
+
+function updateScanUI() {
+  if (!btnScan || !btnSpin) return;
+  const total = totalParticipations();
+  if (total > 0 && spins >= total) {
+    btnScan.style.display = 'none';
+    btnSpin.style.display = 'none';
+    return;
+  }
+  if (ticketValidated) {
+    btnScan.style.display = 'none';
+    btnSpin.style.display = '';
+    btnSpin.disabled      = !canSpin();
+    btnSpin.textContent   = 'Girar';
+  } else {
+    btnScan.style.display = '';
+    btnSpin.style.display = 'none';
+    btnSpin.disabled      = true;
+  }
+}
+
 
 /* ---------- PIN modal open/close ---------- */
 function openPinDialog(){
