@@ -307,130 +307,26 @@ btnExportAll && btnExportAll.addEventListener('click', () => {
 });
 
 /* ── Mapa de ubicaciones (Leaflet) ────────────────────────────────────── */
-const mapFilterStore    = document.getElementById('mapFilterStore');
-const mapStoreDropdown  = document.getElementById('mapStoreDropdown');
-const mapComboClear     = document.getElementById('mapComboClear');
-const mapFilterDate     = document.getElementById('mapFilterDate');
-const mapFilterResult   = document.getElementById('mapFilterResult');
-const btnMapRefresh     = document.getElementById('btnMapRefresh');
-const mapStatTotal      = document.getElementById('mapStatTotal');
-const mapStatNoGeo      = document.getElementById('mapStatNoGeo');
+const mapFilterStore  = document.getElementById('mapFilterStore');
+const mapFilterDate   = document.getElementById('mapFilterDate');
+const mapFilterResult = document.getElementById('mapFilterResult');
+const btnMapRefresh   = document.getElementById('btnMapRefresh');
+const mapStatTotal    = document.getElementById('mapStatTotal');
+const mapStatNoGeo    = document.getElementById('mapStatNoGeo');
 
-let _map           = null;
-let _mapMarkers    = [];
-let _mapStores     = [];   // lista de emails únicos con su etiqueta
-let _mapSelected   = null; // { email, label } o null = "Todas"
-let _mapHlIndex    = -1;
+let _map        = null;
+let _mapMarkers = [];
 
-/* — Combo de tiendas del mapa — */
-function _mapUpdateClear() {
-  if (mapComboClear) mapComboClear.style.display = mapFilterStore.value ? 'block' : 'none';
-}
-
-function _mapBuildStoreList() {
-  // Extraer emails únicos de allSpins y construir lista ordenada
+function _populateStoreFilter() {
+  if (!mapFilterStore) return;
   const emails = [...new Set(allSpins.map(s => s.storeEmail).filter(s => s && s !== '—'))].sort();
-  _mapStores = emails.map(e => ({ email: e, label: e }));
-}
-
-function _mapRenderDropdown(q) {
-  if (!mapStoreDropdown) return;
-  const query   = (q || '').toLowerCase().trim();
-  const all     = { email: '', label: 'Todas las tiendas' };
-  const matches = query
-    ? _mapStores.filter(s => s.label.toLowerCase().includes(query))
-    : [all, ..._mapStores];
-
-  mapStoreDropdown.innerHTML = '';
-  _mapHlIndex = -1;
-
-  if (!matches.length) {
-    mapStoreDropdown.classList.remove('open');
-    mapFilterStore.setAttribute('aria-expanded', 'false');
-    return;
-  }
-
-  matches.forEach(store => {
-    const li = document.createElement('li');
-    li.textContent = store.label;
-    li.setAttribute('role', 'option');
-    if (_mapSelected && _mapSelected.email === store.email) li.classList.add('combo-active');
-    li.addEventListener('mousedown', e => {
-      e.preventDefault();
-      _mapSelectStore(store);
-    });
-    mapStoreDropdown.appendChild(li);
+  while (mapFilterStore.options.length > 1) mapFilterStore.remove(1);
+  emails.forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e; opt.textContent = e;
+    mapFilterStore.appendChild(opt);
   });
-
-  mapStoreDropdown.classList.add('open');
-  mapFilterStore.setAttribute('aria-expanded', 'true');
 }
-
-function _mapSelectStore(store) {
-  _mapSelected = store.email === '' ? null : store;
-  mapFilterStore.value = store.email === '' ? '' : store.label;
-  mapStoreDropdown.classList.remove('open');
-  mapFilterStore.setAttribute('aria-expanded', 'false');
-  _mapUpdateClear();
-  renderMap();
-}
-
-function _mapCloseDropdown() {
-  mapStoreDropdown.classList.remove('open');
-  mapFilterStore.setAttribute('aria-expanded', 'false');
-  // Restaurar texto si el usuario escribió a medias sin seleccionar
-  if (_mapSelected) {
-    mapFilterStore.value = _mapSelected.label;
-  } else if (!mapFilterStore.value) {
-    mapFilterStore.value = '';
-  }
-}
-
-mapFilterStore && mapFilterStore.addEventListener('focus', () => {
-  _mapRenderDropdown(mapFilterStore.value);
-});
-mapFilterStore && mapFilterStore.addEventListener('input', () => {
-  _mapSelected = null;
-  _mapUpdateClear();
-  _mapRenderDropdown(mapFilterStore.value);
-});
-mapFilterStore && mapFilterStore.addEventListener('blur', () => {
-  setTimeout(_mapCloseDropdown, 160);
-});
-mapFilterStore && mapFilterStore.addEventListener('keydown', e => {
-  const items = mapStoreDropdown.querySelectorAll('li');
-  if (!items.length) return;
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    _mapHlIndex = Math.min(_mapHlIndex + 1, items.length - 1);
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    _mapHlIndex = Math.max(_mapHlIndex - 1, 0);
-  } else if (e.key === 'Enter') {
-    if (_mapHlIndex >= 0 && items[_mapHlIndex]) {
-      e.preventDefault();
-      const label = items[_mapHlIndex].textContent;
-      const store = label === 'Todas las tiendas'
-        ? { email: '', label: 'Todas las tiendas' }
-        : _mapStores.find(s => s.label === label);
-      if (store) _mapSelectStore(store);
-    }
-    return;
-  } else if (e.key === 'Escape') {
-    _mapCloseDropdown(); return;
-  } else { return; }
-  items.forEach((li, i) => li.classList.toggle('combo-hl', i === _mapHlIndex));
-  items[_mapHlIndex]?.scrollIntoView({ block: 'nearest' });
-});
-mapComboClear && mapComboClear.addEventListener('mousedown', e => {
-  e.preventDefault();
-  _mapSelected = null;
-  mapFilterStore.value = '';
-  _mapUpdateClear();
-  mapFilterStore.focus();
-  _mapRenderDropdown('');
-  renderMap();
-});
 
 /* — Mapa Leaflet — */
 function _initMap() {
@@ -468,8 +364,8 @@ function renderMap() {
   _mapMarkers.forEach(m => m.remove());
   _mapMarkers = [];
 
-  const emailQ  = _mapSelected ? _mapSelected.email : '';
-  const dateQ   = mapFilterDate?.value  || '';
+  const emailQ  = mapFilterStore?.value  || '';
+  const dateQ   = mapFilterDate?.value   || '';
   const resultQ = mapFilterResult?.value || '';
 
   const withGeo    = allSpins.filter(s => s.lat != null && s.lon != null);
@@ -512,12 +408,13 @@ function renderMap() {
 }
 
 function _initMapSection() {
-  _mapBuildStoreList();
+  _populateStoreFilter();
   _populateDateFilter();
   renderMap();
 }
 
 btnMapRefresh   && btnMapRefresh.addEventListener('click', renderMap);
+mapFilterStore  && mapFilterStore.addEventListener('change', renderMap);
 mapFilterDate   && mapFilterDate.addEventListener('change',  renderMap);
 mapFilterResult && mapFilterResult.addEventListener('change', renderMap);
 
