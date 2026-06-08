@@ -571,7 +571,7 @@ function spin(){
       centerText.style.visibility = 'hidden';
       if (navigator.vibrate) navigator.vibrate(100);
       if (winner.label === "GANADOR"){ celebrateWinDeluxe(); playWinJingle(); }
-      else { loseConfettiX(); playLoseJingle(); }
+      else { loseConfettiX(); }
 
       pendingResult = winner.label;
       spinning = false;
