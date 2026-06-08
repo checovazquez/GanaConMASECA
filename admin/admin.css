@@ -182,6 +182,18 @@ body {
 .a-btn-outline:hover { background: var(--green); color: #fff; }
 
 .a-table-wrap { overflow-x: auto; }
+/* Tablas con scroll vertical fijo */
+.a-table-scroll {
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.a-table-scroll .a-table thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--bg);
+  box-shadow: 0 1px 0 var(--border);
+}
 .a-table {
   width: 100%; border-collapse: collapse; font-size: .88rem;
 }
@@ -201,6 +213,23 @@ body {
 .a-empty {
   text-align: center; color: var(--muted);
   padding: 20px 0; font-size: .9rem;
+}
+/* Columnas numéricas del progreso */
+.a-th-num { text-align: right !important; }
+.a-td-num { text-align: right; font-variant-numeric: tabular-nums; }
+.a-td-win  { text-align: right; color: var(--win-color); font-weight: 700; font-variant-numeric: tabular-nums; }
+.a-td-lose { text-align: right; color: var(--lose-color); font-variant-numeric: tabular-nums; }
+
+/* ── Indicador auto-refresh ─────────────────────────────────────────── */
+.a-refresh-wrap {
+  display: flex; align-items: center; gap: 8px;
+}
+.a-refresh-status {
+  font-size: .78rem; color: var(--muted); white-space: nowrap;
+}
+.a-refresh-countdown {
+  display: inline-block; font-weight: 700;
+  color: var(--green); min-width: 28px; text-align: right;
 }
 
 /* ── CONFIG FORM ────────────────────────────────────────────────────── */
