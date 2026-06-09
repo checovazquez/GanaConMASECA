@@ -589,9 +589,25 @@ btnOk && btnOk.addEventListener('click', () => {
     const now   = new Date();
     const tsKey = todayKey();
 
-    // Guardar en Firestore (no bloquea la UI)
+    // Guardar en Firestore
     if (typeof window.fbSaveSpin === 'function') {
-      window.fbSaveSpin(pendingResult);
+      window.fbLastSpinError = null;
+      window.fbSaveSpin(pendingResult).then(() => {
+        if (statusEl) {
+          if (window.fbLastSpinError) {
+            statusEl.textContent = '⚠ Error: ' + window.fbLastSpinError;
+            statusEl.style.color = 'red';
+          } else {
+            statusEl.textContent = '✓ Giro guardado.';
+            statusEl.style.color = '';
+          }
+        }
+      });
+    } else {
+      if (statusEl) {
+        statusEl.textContent = '⚠ fbSaveSpin no definido (v' + (window.FB_APP_VERSION || '?') + ')';
+        statusEl.style.color = 'red';
+      }
     }
 
     // Mantener log local para la sesión actual
@@ -666,16 +682,40 @@ async function _startCamera() {
   const vp = document.getElementById('scannerViewport');
   if (!vp) return;
 
+  // Ancho del viewport para calcular qrbox
+  const vpW    = vp.offsetWidth  || 300;
+  const vpH    = vp.offsetHeight || 220;
+  const boxW   = Math.round(vpW  * 0.88);
+  const boxH   = Math.round(vpH  * 0.45);  // rectángulo horizontal para barcodes
+
+  const scanConfig = {
+    fps: 20,
+    qrbox:       { width: boxW, height: boxH },
+    aspectRatio: vpW / vpH,
+    experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+    formatsToSupport: [
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E,
+      Html5QrcodeSupportedFormats.ITF,
+      Html5QrcodeSupportedFormats.QR_CODE,
+    ],
+  };
+
   const tryStart = async (facingMode) => {
     _html5Scanner = new Html5Qrcode('scannerViewport');
     await _html5Scanner.start(
-      { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
-      { fps: 10, experimentalFeatures: { useBarCodeDetectorIfSupported: false } },
+      { facingMode },
+      scanConfig,
       _handleBarcode,
       () => {}
     );
     _scannerRunning = true;
   };
+
   try {
     await tryStart('environment');
   } catch(e) {

@@ -248,6 +248,25 @@ auth.onAuthStateChanged(async user => {
   }
 });
 
+/* ── Fecha efectiva (el día cambia a las 2:00 AM hora local) ───────────── */
+function _localDateStr(d) {
+  const y  = d.getFullYear();
+  const m  = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+function getEffectiveDate() {
+  const now = new Date();
+  if (now.getHours() < 2) {
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    return _localDateStr(yesterday);
+  }
+  return _localDateStr(now);
+}
+window.getEffectiveDate = getEffectiveDate;
+window.FB_APP_VERSION   = '210';
+
 async function _initForUser(user) {
   // Cargar configuración global (escrita por el admin)
   try {
@@ -259,14 +278,30 @@ async function _initForUser(user) {
     console.warn('Sin config en Firestore, usando valores locales:', e.message);
   }
 
-  // Cargar estadísticas de la tienda (spins y ganadores previos)
+  // Cargar estadísticas con reset diario a las 2AM
   try {
-    const statsDoc = await db.collection('storeStats').doc(user.uid).get();
+    const statsRef = db.collection('storeStats').doc(user.uid);
+    const statsDoc = await statsRef.get();
+    const today    = getEffectiveDate();
+
     if (statsDoc.exists) {
       const s = statsDoc.data();
-      window.FB_STORE_SPINS   = s.spinsCount   || 0;
-      window.FB_STORE_WINNERS = s.winnersGiven  || 0;
+      if (s.resetDate === today) {
+        window.FB_STORE_SPINS   = s.spinsCount   || 0;
+        window.FB_STORE_WINNERS = s.winnersGiven  || 0;
+      } else {
+        await statsRef.set({
+          storeEmail:   user.email,
+          spinsCount:   0,
+          winnersGiven: 0,
+          resetDate:    today,
+          lastSpin:     s.lastSpin || null
+        });
+        window.FB_STORE_SPINS   = 0;
+        window.FB_STORE_WINNERS = 0;
+      }
     } else {
+      await statsRef.set({ storeEmail: user.email, spinsCount: 0, winnersGiven: 0, resetDate: today });
       window.FB_STORE_SPINS   = 0;
       window.FB_STORE_WINNERS = 0;
     }
@@ -355,47 +390,52 @@ logoutBtn && logoutBtn.addEventListener('click', () => {
 
 /* ── Guardar giro en Firestore ──────────────────────────────────────────── */
 window.fbSaveSpin = async function (result) {
-  if (!_currentUser) return;
+  if (!_currentUser) {
+    window.fbLastSpinError = 'fbSaveSpin: sin usuario autenticado';
+    return;
+  }
 
   const isWinner = result === 'GANADOR';
   const now      = new Date();
 
-  const batch = db.batch();
-
-  // Registro del giro
-  const spinRef = db.collection('spins').doc();
+  // 1. Escribir el giro
+  const spinRef  = db.collection('spins').doc();
   const spinData = {
-    storeId:      _currentUser.uid,
-    storeEmail:   _currentUser.email,
-    timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+    storeId:   _currentUser.uid,
+    storeEmail: _currentUser.email,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     result,
     isWinner,
-    date:         now.toISOString().slice(0, 10),          // YYYY-MM-DD
-    hour:         now.getHours()
+    date:  getEffectiveDate(),
+    hour:  now.getHours()
   };
-
-  // Adjuntar coordenadas si están disponibles
   if (window._geoCoords) {
-    spinData.lat      = window._geoCoords.lat;
-    spinData.lon      = window._geoCoords.lon;
+    spinData.lat         = window._geoCoords.lat;
+    spinData.lon         = window._geoCoords.lon;
     spinData.geoAccuracy = window._geoCoords.accuracy;
   }
 
-  batch.set(spinRef, spinData);
-
-  // Actualizar contadores de la tienda
-  const statsRef = db.collection('storeStats').doc(_currentUser.uid);
-  batch.set(statsRef, {
-    storeEmail:   _currentUser.email,
-    spinsCount:   firebase.firestore.FieldValue.increment(1),
-    winnersGiven: firebase.firestore.FieldValue.increment(isWinner ? 1 : 0),
-    lastSpin:     firebase.firestore.FieldValue.serverTimestamp()
-  }, { merge: true });
-
   try {
-    await batch.commit();
+    await spinRef.set(spinData);
   } catch (e) {
-    console.error('Error guardando giro en Firestore:', e);
+    window.fbLastSpinError = 'spins: ' + e.code + ' — ' + e.message;
+    console.error('[fbSaveSpin] spins:', e);
+    return;
+  }
+
+  // 2. Actualizar contadores de la tienda
+  const statsRef = db.collection('storeStats').doc(_currentUser.uid);
+  try {
+    await statsRef.set({
+      storeEmail:   _currentUser.email,
+      spinsCount:   firebase.firestore.FieldValue.increment(1),
+      winnersGiven: firebase.firestore.FieldValue.increment(isWinner ? 1 : 0),
+      lastSpin:     firebase.firestore.FieldValue.serverTimestamp(),
+      resetDate:    getEffectiveDate()
+    }, { merge: true });
+  } catch (e) {
+    window.fbLastSpinError = 'storeStats: ' + e.code + ' — ' + e.message;
+    console.error('[fbSaveSpin] storeStats:', e);
   }
 };
 
