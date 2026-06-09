@@ -75,6 +75,7 @@ body {
 .a-header-sub   { margin: 2px 0 0; font-size: .8rem; opacity: .8; }
 .a-header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .a-admin-email  { font-size: .82rem; opacity: .85; }
+.a-version      { font-size: .75rem; opacity: .5; font-family: monospace; letter-spacing: .03em; }
 .a-btn-sm {
   padding: 7px 13px; background: rgba(255,255,255,.18);
   color: #fff; border: 1px solid rgba(255,255,255,.35);
