@@ -318,31 +318,36 @@ function renderProgress() {
   if (progressEmpty) progressEmpty.style.display = 'none';
 
   // Filas
+  // usados  = tiros ya realizados  (r.total)
+  // pending = capacidad - usados
+  // total   = usados + pending = capacidad
   progressBody.innerHTML = rows.map(r => {
-    const pending = capacityTotal > 0 ? Math.max(0, capacityTotal - r.total) : '—';
+    const usados  = r.total;
+    const pending = capacityTotal > 0 ? Math.max(0, capacityTotal - usados) : '—';
+    const total   = capacityTotal > 0 ? capacityTotal : '—';
     return `<tr>
       <td>${r.name}</td>
-      <td class="a-td-num">${r.today}</td>
+      <td class="a-td-num">${usados}</td>
       <td class="a-td-num">${pending}</td>
-      <td class="a-td-num">${r.total}</td>
+      <td class="a-td-num">${total}</td>
       <td class="a-td-win">${r.won}</td>
       <td class="a-td-lose">${r.lost}</td>
     </tr>`;
   }).join('');
 
-  // Totales (solo de las filas visibles tras filtro)
-  const sumToday   = rows.reduce((s, r) => s + r.today, 0);
-  const sumTotal   = rows.reduce((s, r) => s + r.total, 0);
+  // Totales
+  const sumUsados  = rows.reduce((s, r) => s + r.total, 0);
   const sumPending = capacityTotal > 0
     ? rows.reduce((s, r) => s + Math.max(0, capacityTotal - r.total), 0)
     : '—';
-  const sumWon  = rows.reduce((s, r) => s + r.won,  0);
-  const sumLost = rows.reduce((s, r) => s + r.lost, 0);
+  const sumTotal = capacityTotal > 0 ? capacityTotal * rows.length : '—';
+  const sumWon   = rows.reduce((s, r) => s + r.won,  0);
+  const sumLost  = rows.reduce((s, r) => s + r.lost, 0);
 
   if (progressFoot) progressFoot.innerHTML = `
     <tr class="a-tfoot-row">
       <td><strong>TOTAL (${rows.length} tiendas)</strong></td>
-      <td class="a-td-num"><strong>${sumToday}</strong></td>
+      <td class="a-td-num"><strong>${sumUsados}</strong></td>
       <td class="a-td-num"><strong>${sumPending}</strong></td>
       <td class="a-td-num"><strong>${sumTotal}</strong></td>
       <td class="a-td-win"><strong>${sumWon}</strong></td>
