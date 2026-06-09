@@ -8,5 +8,6 @@ package-lock.json
 
 # Archivos locales
 usuarios_contrasenas_maseca.xlsx
+~$*.xlsx
 crear-usuarios.js
 .claude/
