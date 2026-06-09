@@ -28,8 +28,8 @@ const db = admin.firestore();
 const COLLECTIONS_TO_DELETE = ['spins', 'storeStats', 'usedTickets'];
 
 const DEFAULT_CONFIG = {
-  winnersTotal: 10,
-  winProbX: 10,
+  winnersTotal: 2,
+  winProbX: 25,
 };
 
 async function deleteCollection(colName) {
